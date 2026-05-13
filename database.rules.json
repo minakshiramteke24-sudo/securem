@@ -1,0 +1,37 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "users": {
+      "$uid": {
+        ".read": "true",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    "stories": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "transfers": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+
+    "typing": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "calls": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}

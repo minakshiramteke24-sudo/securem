@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profiles - Strict Diagnostic Mode
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Username Registry
+    match /usernames/{username} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+    
+    // Chats and Messages
+    match /chats/{chatId} {
+      // Allow read if the user is a participant. 
+      // Also allow getting a non-existent document so getOrCreateChat can work.
+      allow read: if request.auth != null && (resource == null || request.auth.uid in resource.data.participants);
+      
+      // Allow update if the user is a participant
+      allow update: if request.auth != null && (request.auth.uid in resource.data.participants);
+      
+      // Allow creation if the user is one of the participants
+      allow create: if request.auth != null && (request.auth.uid in request.resource.data.participants);
+      
+      match /messages/{messageId} {
+        // Allow read if user is a participant in the parent chat
+        allow read: if request.auth != null && 
+          get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]);
+        
+        // Allow create if user is a participant, senderId matches, and required fields exist
+        allow create: if request.auth != null && 
+          get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]) &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.resource.data.text != null &&
+          (request.resource.data.timestamp != null || request.resource.data.createdAt != null);
+      }
+    }
+  }
+}
