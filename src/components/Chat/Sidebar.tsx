@@ -429,7 +429,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
       {/* VERSION BADGE */}
       <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.3, fontSize: '0.65rem', borderTop: '1px solid var(--border)' }}>
-        SECUREM v2.2.7 • Build 1749
+        SECUREM v2.2.8 • Build 1750
       </div>
 
     </aside>

@@ -91,7 +91,7 @@ const App: React.FC = () => {
   const { isUnlocked, unlock } = useCrypto();
   
   useEffect(() => {
-    console.log("%c        SECUREM v2.2.7 • Build 1749", "background: #6366f1; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
+    console.log("%c        SECUREM v2.2.8 • Build 1750", "background: #6366f1; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
   }, []);
 
   const [isLogin, setIsLogin] = useState(true);
@@ -283,7 +283,7 @@ const App: React.FC = () => {
       ) : (
         <div key="app" className={`app-container ${selectedRecipient ? 'has-selected-chat' : ''}`}>
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#ef4444', color: 'white', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', zIndex: 10000, padding: '4px' }}>
-            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.2.7</span> LATEST VERSION DEPLOYED: v2.2.7 - IF YOU SEE THIS, YOU ARE UPDATED.
+            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.2.8</span> LATEST VERSION DEPLOYED: v2.2.8 - IF YOU SEE THIS, YOU ARE UPDATED.
           </div>
           <Sidebar 
             onSelectChat={(_, recipient) => setSelectedRecipient(recipient)} 
