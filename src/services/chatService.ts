@@ -444,9 +444,7 @@ export const startCall = async (
   try {
     const callRef = ref(rtdb, `calls/${recipientId}/${callerId}`);
     
-    // Set up auto-cleanup on disconnect
-    const disconnectRef = onDisconnect(callRef);
-    await disconnectRef.remove();
+    // Removed onDisconnect cleanup to prevent race conditions in multi-tab sessions
     
     await set(callRef, {
       chatId,

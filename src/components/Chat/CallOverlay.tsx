@@ -71,7 +71,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         if (data.status === 'connected' && status !== 'connected') setStatus('connected');
         return data;
       } else {
-        addLog("Sync: Data missing at path.");
+        addLog("Sync: Data missing.");
       }
     } catch (e: any) {
       addLog(`Sync Err: ${e.message}`);
@@ -114,10 +114,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
       analyser.fftSize = 256;
-      
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
-      
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
 
@@ -170,15 +168,33 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         await pc.setLocalDescription(offer);
         
         const path = `calls/${call.recipientId}/${call.callerId}`;
-        const sanitizedCall = JSON.parse(JSON.stringify({
-          ...internalCall,
-          offer: { type: offer.type, sdp: offer.sdp },
-          status: 'calling',
-          callType: callType,
-          answer: null
-        }));
+        const sendOffer = async () => {
+          const sanitizedCall = JSON.parse(JSON.stringify({
+            ...internalCall,
+            offer: { type: offer.type, sdp: offer.sdp },
+            status: 'calling',
+            callType: callType,
+            answer: null
+          }));
+          await set(ref(rtdb, path), sanitizedCall);
+        };
 
-        await set(ref(rtdb, path), sanitizedCall);
+        await sendOffer();
+        addLog("Offer sent. Loop active.");
+
+        // PERSISTENCE LOOP: Re-send offer if it gets deleted by 'ghost' tabs
+        const persistenceTimer = setInterval(async () => {
+          if (status === 'connected') {
+            clearInterval(persistenceTimer);
+            return;
+          }
+          const snap = await get(ref(rtdb, path));
+          if (!snap.exists() || !snap.val().offer) {
+            addLog("Offer lost! Re-sending...");
+            await sendOffer();
+          }
+        }, 3000);
+
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
       } catch (err: any) {
         addLog(`Error: ${err.message}`);
@@ -208,7 +224,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     }
 
     if (!currentOffer) {
-      addLog("Sync failed. Retrying...");
+      addLog("Wait for caller signal...");
       setIsAccepting(false);
       return;
     }
@@ -314,8 +330,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v228">
-             <span>v2.2.8</span>
+          <div className="call-badge version-v229">
+             <span>v2.2.9</span>
           </div>
         </div>
 
@@ -363,7 +379,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.2.8)</span>
+                <span>SIGNALING LOGS (v2.2.9)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
