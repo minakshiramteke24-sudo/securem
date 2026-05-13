@@ -63,10 +63,12 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const snapshot = await get(ref(rtdb, path));
       if (snapshot.exists()) {
         const data = snapshot.val();
-        addLog(`Sync Results: ${data.status} | Offer: ${!!data.offer}`);
+        addLog(`Sync: ${data.status} | Offer: ${!!data.offer}`);
         setInternalCall(prev => ({ ...prev, ...data }));
         if (data.status === 'connected' && status !== 'connected') setStatus('connected');
         return data;
+      } else {
+        addLog("Sync: Node not found at path.");
       }
     } catch (e: any) {
       addLog(`Sync Fail: ${e.message}`);
@@ -117,8 +119,13 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         addLog("Media init...");
         const callType = (internalCall.callType || internalCall.type || 'audio') as any;
         const stream = await callManager.startLocalStream(callType);
+        
+        // Ensure UNMUTED by default
+        stream.getAudioTracks().forEach(track => { track.enabled = true; });
+        setIsMuted(false);
+        
         setLocalStream(stream);
-        addLog("Media OK. Creating PC...");
+        addLog("Media OK. Sending Offer...");
 
         const pc = await callManager.createPeerConnection(
           stream,
@@ -140,10 +147,10 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         
-        addLog("Sending offer...");
         await updateCallStatus(call.recipientId, call.callerId, { 
           offer: { type: offer.type, sdp: offer.sdp }, 
-          status: 'calling' 
+          status: 'calling',
+          callType: callType
         });
         
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
@@ -158,7 +165,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
   useEffect(() => {
     if (!isIncoming && internalCall.answer && status !== 'connected') {
-      addLog("Remote answer! Handshaking...");
+      addLog("Remote answer! Connecting...");
       callManager.setRemoteDescription(internalCall.answer);
     }
   }, [internalCall.answer, isIncoming, status, addLog]);
@@ -172,7 +179,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     let currentOffer = internalCall.offer;
     
     if (!currentOffer) {
-      addLog("Offer missing. Force syncing...");
+      addLog("Offer missing. Attempting deep sync...");
       const syncedData = await manualSync();
       if (syncedData?.offer) {
         currentOffer = syncedData.offer;
@@ -180,7 +187,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     }
 
     if (!currentOffer) {
-      addLog("No offer yet. Please wait...");
+      addLog("Offer still missing. Retrying...");
       setIsAccepting(false);
       return;
     }
@@ -190,13 +197,18 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     try {
       const callType = (internalCall.callType || internalCall.type || 'audio') as any;
       const stream = await callManager.startLocalStream(callType);
+      
+      // Ensure UNMUTED by default
+      stream.getAudioTracks().forEach(track => { track.enabled = true; });
+      setIsMuted(false);
+      
       setLocalStream(stream);
-      addLog("Media OK. Connecting...");
+      addLog("Media OK. Finalizing...");
 
       const pc = await callManager.createPeerConnection(
         stream,
         (remote) => { 
-          addLog("Remote stream OK!");
+          addLog("Remote stream received!");
           setRemoteStream(remote); 
           setStatus('connected'); 
         },
@@ -228,8 +240,10 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
   const toggleMute = () => {
     if (localStream) {
-      localStream.getAudioTracks().forEach(t => { t.enabled = isMuted; });
-      setIsMuted(!isMuted);
+      const newState = !isMuted;
+      localStream.getAudioTracks().forEach(t => { t.enabled = !newState; });
+      setIsMuted(newState);
+      addLog(newState ? "Muted" : "Unmuted");
     }
   };
 
@@ -237,13 +251,11 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      // Force play
-      remoteVideoRef.current.play().catch(() => {});
+      remoteVideoRef.current.play().catch(e => console.error("Video play fail:", e));
     }
     if (remoteAudioRef.current && remoteStream) {
       remoteAudioRef.current.srcObject = remoteStream;
-      // Force play
-      remoteAudioRef.current.play().catch(() => {});
+      remoteAudioRef.current.play().catch(e => console.error("Audio play fail:", e));
     }
   }, [localStream, remoteStream]);
 
@@ -278,8 +290,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge" style={{ background: '#6366f1', color: 'white' }}>
-             <span>v2.2.4</span>
+          <div className="call-badge version-v225">
+             <span>v2.2.5</span>
           </div>
         </div>
 
@@ -289,7 +301,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           ) : (
             <div className="call-avatar-view">
               <div className="call-avatar-circle">
-                <div className="call-ping"></div>
+                {status === 'connected' && <div className="call-ping"></div>}
                 <div className="avatar-inner-box">
                    {remoteAvatar ? (
                      <img src={remoteAvatar} alt="Avatar" className="avatar-img" />
@@ -320,7 +332,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.2.4)</span>
+                <span>SIGNALING LOGS (v2.2.5)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
@@ -335,7 +347,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
         <div className="call-actions-bar">
           <div className="call-btn-group">
-            <button onClick={toggleMute} className={`call-btn ${isMuted ? 'active' : ''}`}>
+            <button onClick={toggleMute} className={`call-btn ${isMuted ? 'muted' : ''}`} title={isMuted ? "Unmute" : "Mute"}>
               {isMuted ? <MicOff /> : <Mic />}
             </button>
             <button onClick={() => handleEnd()} className="call-btn danger end">

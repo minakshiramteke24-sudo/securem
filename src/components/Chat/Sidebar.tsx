@@ -17,7 +17,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings }) => {
   const { user, profile } = useAuth();
-  
+
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatorType, setCreatorType] = useState<'text' | 'image' | 'video' | 'audio' | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,11 +27,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const [stories, setStories] = useState<Story[]>([]);
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [isPostingStory, setIsPostingStory] = useState(false);
-  
+
   // Menu states
   const [profileMenuOpen, setProfileMenuOpen] = useState<{ x: number, y: number } | null>(null);
   const [chatMenuConfig, setChatMenuConfig] = useState<{ x: number, y: number, chatId: string, recipientName: string } | null>(null);
-  
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         setRecentChats(chats);
         setChatsLoading(false);
       });
-      
+
       const unsubscribeStories = subscribeToActiveStories((activeStories) => {
         setStories(activeStories);
       });
@@ -157,16 +157,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   return (
     <aside className="sidebar">
       {/* HEADER */}
-      <motion.div 
+      <motion.div
         className="sidebar-header"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
         <div className="header-top">
-          <motion.div 
-            className="user-profile" 
-            onClick={onShowSettings} 
+          <motion.div
+            className="user-profile"
+            onClick={onShowSettings}
             style={{ cursor: 'pointer' }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -180,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             </div>
           </motion.div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsCreatorOpen(true)}
@@ -189,10 +189,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             >
               <Plus size={20} />
             </motion.button>
-            <button 
-              onClick={toggleProfileMenu} 
-              className={`dots-btn ${profileMenuOpen ? 'active' : ''}`} 
-              title="More options" 
+            <button
+              onClick={toggleProfileMenu}
+              className={`dots-btn ${profileMenuOpen ? 'active' : ''}`}
+              title="More options"
               style={{ fontSize: '28px', fontWeight: 'bold', color: dotColor, lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ⋮
@@ -202,9 +202,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
         <div className="search-bar">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search users or chats..." 
+          <input
+            type="text"
+            placeholder="Search users or chats..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -228,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
           <AnimatePresence>
             {isCreatorOpen && (
-              <StoryCreator 
+              <StoryCreator
                 initialType={creatorType}
                 onClose={() => { setIsCreatorOpen(false); setCreatorType(null); }}
                 onPost={async (type, content, musicData) => {
@@ -243,10 +243,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               />
             )}
           </AnimatePresence>
-          
+
           {stories.map((story, idx) => (
-            <motion.div 
-              key={story.id} 
+            <motion.div
+              key={story.id}
               className="story-item"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -268,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
       <div className="sidebar-content">
         <AnimatePresence mode="wait">
           {searchTerm.length >= 2 ? (
-            <motion.div 
+            <motion.div
               key="search"
               className="search-results"
               variants={containerVariants}
@@ -278,10 +278,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             >
               <p className="section-label">Global Search</p>
               {searchResults.map((u) => (
-                <motion.div 
-                  key={u.uid} 
+                <motion.div
+                  key={u.uid}
                   variants={itemVariants}
-                  className="chat-item-container" 
+                  className="chat-item-container"
                   onClick={() => { onSelectChat("", u); setSearchTerm(""); }}
                   whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
                 >
@@ -299,7 +299,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               {searchResults.length === 0 && <div className="no-results">No users found</div>}
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="chats"
               className="chat-list"
               variants={containerVariants}
@@ -309,8 +309,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               <p className="section-label">Recent Conversations</p>
               {recentChats.length > 0 ? (
                 recentChats.map((chat) => (
-                  <motion.div 
-                    key={chat.id} 
+                  <motion.div
+                    key={chat.id}
                     variants={itemVariants}
                     className={`chat-item-container ${chat.isUnread ? 'unread' : ''}`}
                     onClick={() => onSelectChat(chat.id, chat.recipient)}
@@ -332,11 +332,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                         <p className="last-message">{chat.lastMessage || "End-to-end encrypted"}</p>
                       </div>
                     </div>
-                    
+
                     <div className="chat-meta">
                       <span className="time">{formatTime(chat.updatedAt)}</span>
-                      <button 
-                        className="dots-btn small" 
+                      <button
+                        className="dots-btn small"
                         onClick={(e) => openChatMenu(e, chat.id, chat.recipient?.username || "")}
                         title="Chat options"
                         style={{ fontSize: '22px', fontWeight: 'bold', color: dotColor, lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -359,7 +359,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
       {/* PROFILE DROPDOWN */}
       <AnimatePresence>
         {profileMenuOpen && (
-          <motion.div 
+          <motion.div
             ref={profileMenuRef}
             className="fixed-dropdown glass"
             style={{ top: profileMenuOpen.y + 10, left: profileMenuOpen.x - 180, zIndex: 1000 }}
@@ -384,7 +384,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
       {/* CHAT ITEM DROPDOWN */}
       <AnimatePresence>
         {chatMenuConfig && (
-          <motion.div 
+          <motion.div
             ref={chatMenuRef}
             className="fixed-dropdown glass"
             style={{ top: chatMenuConfig.y, left: chatMenuConfig.x - 180, zIndex: 1000 }}
@@ -394,24 +394,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             exit="exit"
           >
             <div className="dropdown-header">{chatMenuConfig.recipientName}</div>
-            <div className="dropdown-item" onClick={() => { 
+            <div className="dropdown-item" onClick={() => {
               const chat = recentChats.find(c => c.id === chatMenuConfig.chatId);
-              if (chat) handleStartCall(chatMenuConfig.chatId, chat.recipient, 'audio'); 
-              setChatMenuConfig(null); 
+              if (chat) handleStartCall(chatMenuConfig.chatId, chat.recipient, 'audio');
+              setChatMenuConfig(null);
             }}>
               <Phone size={14} /> <span>Voice Call</span>
             </div>
-            <div className="dropdown-item" onClick={() => { 
+            <div className="dropdown-item" onClick={() => {
               const chat = recentChats.find(c => c.id === chatMenuConfig.chatId);
-              if (chat) handleStartCall(chatMenuConfig.chatId, chat.recipient, 'video'); 
-              setChatMenuConfig(null); 
+              if (chat) handleStartCall(chatMenuConfig.chatId, chat.recipient, 'video');
+              setChatMenuConfig(null);
             }}>
               <Video size={14} /> <span>Video Call</span>
             </div>
-            <div className="dropdown-item danger" onClick={() => { if(window.confirm("Clear all messages?")) clearChatMessages(chatMenuConfig.chatId, user!.uid); setChatMenuConfig(null); }}>
+            <div className="dropdown-item danger" onClick={() => { if (window.confirm("Clear all messages?")) clearChatMessages(chatMenuConfig.chatId, user!.uid); setChatMenuConfig(null); }}>
               <Eraser size={14} /> <span>Clear Chat</span>
             </div>
-            <div className="dropdown-item danger" style={{ marginTop: "4px", borderTop: "1px solid var(--border)", paddingTop: "8px" }} onClick={() => { if(window.confirm("Unfriend and remove chat?")) deleteLocalChat(user!.uid, chatMenuConfig.chatId); setChatMenuConfig(null); }}>
+            <div className="dropdown-item danger" style={{ marginTop: "4px", borderTop: "1px solid var(--border)", paddingTop: "8px" }} onClick={() => { if (window.confirm("Unfriend and remove chat?")) deleteLocalChat(user!.uid, chatMenuConfig.chatId); setChatMenuConfig(null); }}>
               <UserMinus size={14} /> <span>Unfriend</span>
             </div>
           </motion.div>
@@ -420,16 +420,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
       {/* STORY VIEWER OVERLAY */}
       {activeStoryIndex !== null && (
-        <StoryViewer 
-          stories={stories} 
-          initialIndex={activeStoryIndex} 
-          onClose={() => setActiveStoryIndex(null)} 
+        <StoryViewer
+          stories={stories}
+          initialIndex={activeStoryIndex}
+          onClose={() => setActiveStoryIndex(null)}
         />
       )}
 
       {/* VERSION BADGE */}
       <div style={{ padding: '1rem', textAlign: 'center', opacity: 0.3, fontSize: '0.65rem', borderTop: '1px solid var(--border)' }}>
-        SECUREM v2.2.4 • Build 1746
+        SECUREM v2.2.5 • Build 1747
       </div>
 
     </aside>
