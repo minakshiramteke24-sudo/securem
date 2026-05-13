@@ -52,7 +52,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const shouldEndCall = useRef(true);
 
   const addLog = useCallback((msg: string) => {
-    setLogs(prev => [ `${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 15)]);
+    setLogs(prev => [ `${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 30)]);
   }, []);
 
   const manualSync = useCallback(async () => {
@@ -147,14 +147,17 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         await pc.setLocalDescription(offer);
         
         const path = `calls/${call.recipientId}/${call.callerId}`;
-        // FORCE CLEAN the node to remove old call data
-        await set(ref(rtdb, path), {
+        
+        // SANITIZE: Remove any undefined values to prevent Firebase errors
+        const sanitizedCall = JSON.parse(JSON.stringify({
           ...internalCall,
           offer: { type: offer.type, sdp: offer.sdp },
           status: 'calling',
           callType: callType,
-          answer: null // Clear any old answers
-        });
+          answer: null
+        }));
+
+        await set(ref(rtdb, path), sanitizedCall);
         
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
       } catch (err: any) {
@@ -187,7 +190,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     }
 
     if (!currentOffer) {
-      addLog("Sync failed. Check partner connection.");
+      addLog("Sync failed. Retrying...");
       setIsAccepting(false);
       return;
     }
@@ -230,11 +233,13 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const snapshot = await get(callRef);
       const currentData = snapshot.val() || {};
 
-      await set(callRef, { 
+      const sanitizedAnswer = JSON.parse(JSON.stringify({ 
         ...currentData,
         answer: { type: answer.type, sdp: answer.sdp }, 
         status: 'connected' 
-      });
+      }));
+
+      await set(callRef, sanitizedAnswer);
       setIsAccepting(false);
     } catch (e: any) {
       addLog(`Fail: ${e.message}`);
@@ -295,8 +300,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v226">
-             <span>v2.2.6</span>
+          <div className="call-badge version-v227">
+             <span>v2.2.7</span>
           </div>
         </div>
 
@@ -337,13 +342,13 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.2.6)</span>
+                <span>SIGNALING LOGS (v2.2.7)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
                 </div>
               </div>
-              <div className="console-body">
+              <div className="console-body" style={{ maxHeight: '150px', overflowY: 'auto', padding: '10px' }}>
                 {logs.map((log, i) => <div key={i} className="log-line">{log}</div>)}
               </div>
             </div>
