@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { ref, onValue, off, get } from "firebase/database";
+import { ref, onValue, off, get, set } from "firebase/database";
 import { rtdb } from "../../services/firebase";
-import { updateCallStatus, endCall } from "../../services/chatService";
+import { endCall } from "../../services/chatService";
 import { callManager, type CallSession } from "../../services/callManager";
 
 interface CallOverlayProps {
@@ -58,20 +58,20 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const manualSync = useCallback(async () => {
     if (!user) return;
     const path = `calls/${call.recipientId}/${call.callerId}`;
-    addLog(`Force Syncing: ${path}`);
+    addLog(`Deep Sync: ${path}`);
     try {
       const snapshot = await get(ref(rtdb, path));
       if (snapshot.exists()) {
         const data = snapshot.val();
-        addLog(`Sync: ${data.status} | Offer: ${!!data.offer}`);
+        addLog(`Found: ${data.status} | O: ${!!data.offer} | A: ${!!data.answer}`);
         setInternalCall(prev => ({ ...prev, ...data }));
         if (data.status === 'connected' && status !== 'connected') setStatus('connected');
         return data;
       } else {
-        addLog("Sync: Node not found at path.");
+        addLog("Sync: Data missing at path.");
       }
     } catch (e: any) {
-      addLog(`Sync Fail: ${e.message}`);
+      addLog(`Sync Err: ${e.message}`);
     }
     return null;
   }, [user, call.recipientId, call.callerId, status, addLog]);
@@ -120,7 +120,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         const callType = (internalCall.callType || internalCall.type || 'audio') as any;
         const stream = await callManager.startLocalStream(callType);
         
-        // Ensure UNMUTED by default
         stream.getAudioTracks().forEach(track => { track.enabled = true; });
         setIsMuted(false);
         
@@ -130,12 +129,12 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         const pc = await callManager.createPeerConnection(
           stream,
           (remote) => { 
-            addLog("Remote stream received!");
+            addLog("Stream OK!");
             setRemoteStream(remote); 
             setStatus('connected'); 
           },
           (state) => { 
-            addLog(`PC State: ${state}`); 
+            addLog(`PC: ${state}`); 
             if (state === 'connected') setStatus('connected'); 
           }
         );
@@ -147,10 +146,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         
-        await updateCallStatus(call.recipientId, call.callerId, { 
-          offer: { type: offer.type, sdp: offer.sdp }, 
+        const path = `calls/${call.recipientId}/${call.callerId}`;
+        // FORCE CLEAN the node to remove old call data
+        await set(ref(rtdb, path), {
+          ...internalCall,
+          offer: { type: offer.type, sdp: offer.sdp },
           status: 'calling',
-          callType: callType
+          callType: callType,
+          answer: null // Clear any old answers
         });
         
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
@@ -161,11 +164,11 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     };
 
     startCallHandshake();
-  }, [isIncoming, status, user, call.recipientId, call.callerId, addLog, localStream, internalCall.callType, internalCall.type]);
+  }, [isIncoming, status, user, call.recipientId, call.callerId, addLog, localStream, internalCall.callType, internalCall.type, internalCall]);
 
   useEffect(() => {
     if (!isIncoming && internalCall.answer && status !== 'connected') {
-      addLog("Remote answer! Connecting...");
+      addLog("Answer found! Finalizing...");
       callManager.setRemoteDescription(internalCall.answer);
     }
   }, [internalCall.answer, isIncoming, status, addLog]);
@@ -177,17 +180,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     addLog("Accepting...");
 
     let currentOffer = internalCall.offer;
-    
     if (!currentOffer) {
-      addLog("Offer missing. Attempting deep sync...");
+      addLog("Offer missing. Deep syncing...");
       const syncedData = await manualSync();
-      if (syncedData?.offer) {
-        currentOffer = syncedData.offer;
-      }
+      currentOffer = syncedData?.offer;
     }
 
     if (!currentOffer) {
-      addLog("Offer still missing. Retrying...");
+      addLog("Sync failed. Check partner connection.");
       setIsAccepting(false);
       return;
     }
@@ -198,22 +198,21 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const callType = (internalCall.callType || internalCall.type || 'audio') as any;
       const stream = await callManager.startLocalStream(callType);
       
-      // Ensure UNMUTED by default
       stream.getAudioTracks().forEach(track => { track.enabled = true; });
       setIsMuted(false);
       
       setLocalStream(stream);
-      addLog("Media OK. Finalizing...");
+      addLog("Media OK. Handshaking...");
 
       const pc = await callManager.createPeerConnection(
         stream,
         (remote) => { 
-          addLog("Remote stream received!");
+          addLog("Stream OK!");
           setRemoteStream(remote); 
           setStatus('connected'); 
         },
         (state) => { 
-          addLog(`PC State: ${state}`);
+          addLog(`PC: ${state}`);
           if (state === 'connected') setStatus('connected'); 
         }
       );
@@ -226,7 +225,13 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       await callManager.setRemoteDescription(currentOffer);
       const answer = await callManager.createAnswer(callType);
       
-      await updateCallStatus(call.recipientId, call.callerId, { 
+      const path = `calls/${call.recipientId}/${call.callerId}`;
+      const callRef = ref(rtdb, path);
+      const snapshot = await get(callRef);
+      const currentData = snapshot.val() || {};
+
+      await set(callRef, { 
+        ...currentData,
         answer: { type: answer.type, sdp: answer.sdp }, 
         status: 'connected' 
       });
@@ -251,11 +256,11 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(e => console.error("Video play fail:", e));
+      remoteVideoRef.current.play().catch(() => {});
     }
     if (remoteAudioRef.current && remoteStream) {
       remoteAudioRef.current.srcObject = remoteStream;
-      remoteAudioRef.current.play().catch(e => console.error("Audio play fail:", e));
+      remoteAudioRef.current.play().catch(() => {});
     }
   }, [localStream, remoteStream]);
 
@@ -290,8 +295,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v225">
-             <span>v2.2.5</span>
+          <div className="call-badge version-v226">
+             <span>v2.2.6</span>
           </div>
         </div>
 
@@ -332,7 +337,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.2.5)</span>
+                <span>SIGNALING LOGS (v2.2.6)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>

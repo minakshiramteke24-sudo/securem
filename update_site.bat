@@ -3,16 +3,15 @@ echo =======================================
 echo    SECUREM ONE-CLICK UPDATE (v2.2.5)
 echo =======================================
 echo.
-echo 1. Collecting latest changes...
+echo 1. Saving to GitHub (Backup)...
 git add .
-echo.
-echo 2. Saving changes...
 git commit -m "Automated Update"
+git push origin main
 echo.
-echo 3. Sending to GitHub / Vercel...
-git push
+echo 2. Pushing Live to Vercel...
+call vercel --prod
 echo.
 echo =======================================
-echo    SUCCESS! Wait 45 seconds for Vercel.
+echo    SUCCESS! Your site is now LIVE.
 echo =======================================
 pause

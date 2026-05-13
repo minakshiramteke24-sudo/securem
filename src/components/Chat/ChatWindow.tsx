@@ -226,7 +226,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 <div className="header-info">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <h3>{recipient?.username || "Secure User"}</h3>
-                    <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.2.5</span>
+                    <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.2.6</span>
                   </div>
                   <p className="status-text">{recipientTyping ? "typing..." : recipient?.status || "Online"}</p>
                 </div>
