@@ -184,7 +184,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
         // PERSISTENCE LOOP: Re-send offer if it gets deleted by 'ghost' tabs
         const persistenceTimer = setInterval(async () => {
-          if (status === 'connected') {
+          if ((status as string) === 'connected') {
             clearInterval(persistenceTimer);
             return;
           }
