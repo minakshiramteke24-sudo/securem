@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, Trash2, Eye, Send, MessageCircle } from 'lucide-react';
+import { X, Shield, Trash2, Eye, Send, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { type Story, deleteStory, markStoryAsSeen } from '../../services/storyService';
 import { sendMessage } from '../../services/chatService';
 import { useAuth } from '../../context/AuthContext';
@@ -225,9 +225,19 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation Click Zones */}
-          <div className="story-nav-zone left" onClick={handlePrev} />
-          <div className="story-nav-zone right" onClick={handleNext} />
+          {/* Navigation Controls */}
+          <div className="story-nav-zone left" onClick={handlePrev}>
+            {currentIndex > 0 && (
+              <button className="story-nav-btn prev">
+                <ChevronLeft size={32} />
+              </button>
+            )}
+          </div>
+          <div className="story-nav-zone right" onClick={handleNext}>
+            <button className="story-nav-btn next">
+              <ChevronRight size={32} />
+            </button>
+          </div>
         </div>
 
         {/* Footer Interaction */}
@@ -460,9 +470,30 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
           text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        .story-nav-zone { position: absolute; top: 0; bottom: 0; z-index: 5; }
-        .story-nav-zone.left { left: 0; width: 30%; }
-        .story-nav-zone.right { right: 0; width: 70%; }
+        .story-nav-zone { position: absolute; top: 0; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: center; }
+        .story-nav-zone.left { left: 0; width: 20%; cursor: pointer; }
+        .story-nav-zone.right { right: 0; width: 80%; cursor: pointer; }
+
+        .story-nav-btn {
+          background: rgba(255,255,255,0.1);
+          border: none;
+          color: white;
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(10px);
+          transition: all 0.2s ease;
+          opacity: 0;
+        }
+
+        .story-nav-zone:hover .story-nav-btn { opacity: 1; transform: scale(1.1); }
+        .story-nav-btn:active { transform: scale(0.9); }
+
+        .story-nav-zone.left { justify-content: flex-start; padding-left: 20px; }
+        .story-nav-zone.right { justify-content: flex-end; padding-right: 20px; }
 
         .story-footer {
           padding: 20px;
