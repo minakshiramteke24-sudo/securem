@@ -5,7 +5,7 @@ import { useCrypto } from "./context/CryptoContext";
 import { type UserProfile } from "./services/userService";
 import { auth, rtdb } from "./services/firebase";
 import { ref, get, remove } from "firebase/database";
-import { ShieldAlert, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { PrivacyPolicy, TermsOfService, AboutSecurem } from "./components/Pages/Legal";
 import { listenForCalls, startCall } from "./services/chatService";
 
