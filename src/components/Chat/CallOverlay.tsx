@@ -383,12 +383,9 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Lock size={14} />
             <span>E2EE VALIDATED</span>
           </div>
-          <div className="call-badge" onClick={() => setShowConsole(!showConsole)}>
+          <div className="call-badge">
             <Activity size={14} />
-            <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
-          </div>
-          <div className="call-badge version-v244">
-             <span>v2.4.4</span>
+            <span>S: {status.toUpperCase()}</span>
           </div>
         </div>
 
@@ -439,23 +436,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           )}
         </div>
 
-        <AnimatePresence>
-          {showConsole && (
-            <div className="call-debug-console">
-              <div className="console-header">
-                <span>SIGNALING LOGS (v2.4.4)</span>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
-                  <button onClick={() => setShowConsole(false)}>×</button>
-                </div>
-              </div>
-              <div className="console-body" style={{ maxHeight: '150px', overflowY: 'auto', padding: '10px' }}>
-                {logs.map((log, i) => <div key={i} className="log-line">{log}</div>)}
-                <div ref={logsEndRef} />
-              </div>
-            </div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
 
         <div className="call-actions-bar enhanced-controls">
           <AnimatePresence mode="wait">
@@ -522,13 +504,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                 >
                   {isSpeakerOff ? <VolumeX size={28} /> : <Volume2 size={28} />}
                   <span className="btn-label">SPEAKER</span>
-                </button>
-
-                <button 
-                  onClick={() => setShowConsole(!showConsole)} 
-                  className={`call-btn medium console-btn ${showConsole ? 'active' : ''}`}
-                >
-                  <Terminal size={20} />
                 </button>
               </motion.div>
             )}
