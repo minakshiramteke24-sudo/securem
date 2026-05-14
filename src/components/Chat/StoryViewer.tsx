@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Trash2, Eye, Send, MessageCircle } from 'lucide-react';
 import { type Story, deleteStory, markStoryAsSeen } from '../../services/storyService';
 import { sendMessage } from '../../services/chatService';
 import { useAuth } from '../../context/AuthContext';
+import { useCrypto } from '../../context/CryptoContext';
 
 // v2.4.4 BUILD 1757 - PREMIUM STORY VIEWER
 
@@ -15,6 +16,7 @@ interface StoryViewerProps {
 
 const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClose }) => {
   const { user } = useAuth();
+  const { signingPrivateKey } = useCrypto();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const [showViews, setShowViews] = useState(false);
@@ -79,12 +81,12 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !user || isSendingReply) return;
+    if (!replyText.trim() || !user || isSendingReply || !signingPrivateKey) return;
     
     setIsSendingReply(true);
     try {
       // Stories are ephemeral, replies go to chat
-      await sendMessage("direct", user.uid, currentStory.uid, `Replied to your story: ${replyText}`);
+      await sendMessage("direct", user.uid, currentStory.uid, `Replied to your story: ${replyText}`, signingPrivateKey);
       setReplyText("");
       alert("Reply sent!");
     } catch (e) {
@@ -337,7 +339,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
         .story-avatar-ring img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
         .avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--primary); border-radius: 12px; font-weight: 800; }
 
-        .story-meta { display: flex; flexDirection: column; }
+        .story-meta { display: flex; flex-direction: column; }
         .story-username-text { font-weight: 700; font-size: 0.95rem; }
         .story-time-text { font-size: 0.75rem; opacity: 0.6; }
 

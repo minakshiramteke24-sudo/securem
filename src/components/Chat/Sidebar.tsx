@@ -18,8 +18,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings }) => {
   const { user, profile } = useAuth();
 
-  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [creatorType, setCreatorType] = useState<'text' | 'image' | 'video' | 'audio' | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [recentChats, setRecentChats] = useState<any[]>([]);
