@@ -312,18 +312,26 @@ const App: React.FC = () => {
                 className="chat-window" 
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}
               >
-                <div>
+                <div className="welcome-screen-premium">
                   <motion.div 
-                    animate={{ scale: [0.95, 1, 0.95] }} 
-                    transition={{ repeat: Infinity, duration: 4 }} 
-                    style={{ marginBottom: "1.5rem", color: "var(--primary)" }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    style={{ marginBottom: "2rem" }}
                   >
-                    <ShieldAlert size={64} style={{ margin: "0 auto", opacity: 0.5 }} />
+                    <div className="security-badge-large">
+                      <Lock size={48} color="white" />
+                    </div>
                   </motion.div>
-                  <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>Your Privacy, Guaranteed.</h2>
-                  <p style={{ color: "var(--text-muted)", maxWidth: "400px" }}>
-                    Securem uses end-to-end encryption. Only you and your contacts have the keys to read your messages.
+                  <h2 style={{ fontSize: "2.5rem", fontWeight: 800, marginBottom: "0.75rem", letterSpacing: "-0.02em" }}>Securem Messenger</h2>
+                  <p style={{ color: "var(--text-muted)", maxWidth: "450px", margin: "0 auto 2.5rem", fontSize: "1.1rem", lineHeight: 1.6 }}>
+                    End-to-End Encrypted. <br /> 
+                    Your conversations are shielded with military-grade 256-bit AES encryption.
                   </p>
+                  <div className="encryption-tags" style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                    <span className="e2e-tag">AES-256</span>
+                    <span className="e2e-tag">RSA-2048</span>
+                    <span className="e2e-tag">P2P DIRECT</span>
+                  </div>
                 </div>
               </motion.main>
             )}

@@ -1489,3 +1489,70 @@ input:focus {
 
 /* Responsive Layout */
 @media (max-width: 850px) { .app-container { grid-template-columns: 1fr !important; } .sidebar { width: 100% !important; position: absolute; inset: 0; z-index: 10; transition: transform 0.3s ease; } .app-container.has-selected-chat .sidebar { transform: translateX(-100%); } .chat-window { width: 100% !important; } .app-container:not(.has-selected-chat) .chat-window { display: none !important; } .back-btn { display: flex !important; } }
+
+/* --- PROFESSIONAL LIGHT MODE OVERRIDE (v2.4.4 Master) --- */
+[data-theme=" light\] {
+ --bg-dark: #f8fafc !important;
+ --bg-card: #ffffff !important;
+ --text-main: #0f172a !important;
+ --text-muted: #64748b !important;
+ --border: rgba(0, 0, 0, 0.05) !important;
+ --glass: rgba(255, 255, 255, 0.8) !important;
+ --glass-border: rgba(0, 0, 0, 0.04) !important;
+ --primary: #6366f1 !important;
+ --primary-hover: #4f46e5 !important;
+ --accent: #10b981 !important;
+}
+
+[data-theme=\light\] .chat-window {
+ background-image: none !important;
+ background-color: var(--bg-dark) !important;
+}
+
+[data-theme=\light\] .message-bubble.them {
+ background-color: #ffffff !important;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
+ border: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+[data-theme=\light\] .sidebar {
+ background-color: #ffffff !important;
+ border-right: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+[data-theme=\light\] .sidebar-header {
+ background-color: #ffffff !important;
+ border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+/* WELCOME SCREEN PREMIUM STYLES */
+.welcome-screen-premium {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ max-width: 600px;
+ padding: 4rem;
+}
+
+.security-badge-large {
+ width: 100px;
+ height: 100px;
+ border-radius: 30px;
+ background: linear-gradient(135deg, var(--primary), #818cf8);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ box-shadow: 0 20px 40px rgba(var(--primary-rgb), 0.3);
+ margin-bottom: 2rem;
+}
+
+.e2e-tag {
+ padding: 6px 14px;
+ background: rgba(var(--primary-rgb), 0.1);
+ color: var(--primary);
+ border-radius: 100px;
+ font-size: 0.75rem;
+ font-weight: 800;
+ letter-spacing: 0.05em;
+ border: 1px solid rgba(var(--primary-rgb), 0.1);
+}
