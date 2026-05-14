@@ -10,7 +10,9 @@ import {
   Lock,
   Terminal,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  VolumeX,
+  Zap
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -58,6 +60,18 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     setLogs(prev => [ `${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 30)]);
   }, []);
 
+  const forceAudioPlay = () => {
+    addLog("Forcing audio playback...");
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.muted = false;
+      remoteAudioRef.current.volume = 1.0;
+      remoteAudioRef.current.play().catch(e => addLog(`Play fail: ${e.message}`));
+    }
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+  };
+
   const manualSync = useCallback(async () => {
     if (!user) return;
     const path = `calls/${call.recipientId}/${call.callerId}`;
@@ -70,8 +84,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         setInternalCall(prev => ({ ...prev, ...data }));
         if (data.status === 'connected' && status !== 'connected') setStatus('connected');
         return data;
-      } else {
-        addLog("Sync: Data missing.");
       }
     } catch (e: any) {
       addLog(`Sync Err: ${e.message}`);
@@ -95,7 +107,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     if (!user) return;
     const path = `calls/${call.recipientId}/${call.callerId}`;
     const callRef = ref(rtdb, path);
-    
     onValue(callRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -103,20 +114,19 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       if (data.status === 'ended') handleEnd('Remote ended');
       if (data.status === 'connected' && status !== 'connected') setStatus('connected');
     });
-
     return () => off(callRef);
   }, [user, call.recipientId, call.callerId, handleEnd]);
 
   const startVolumeMonitor = (stream: MediaStream) => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(stream);
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyser = audioCtx.createAnalyser();
+      const source = audioCtx.createMediaStreamSource(stream);
       source.connect(analyser);
       analyser.fftSize = 256;
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
-      audioContextRef.current = audioContext;
+      audioContextRef.current = audioCtx;
       analyserRef.current = analyser;
 
       const updateVolume = () => {
@@ -140,9 +150,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         addLog("Media init...");
         const callType = (internalCall.callType || internalCall.type || 'audio') as any;
         const stream = await callManager.startLocalStream(callType);
-        
-        stream.getAudioTracks().forEach(track => { track.enabled = true; });
-        setIsMuted(false);
+        stream.getAudioTracks().forEach(t => { t.enabled = true; });
         setLocalStream(stream);
         addLog("Media OK. Sending Offer...");
 
@@ -180,9 +188,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         };
 
         await sendOffer();
-        addLog("Offer sent. Loop active.");
-
-        // PERSISTENCE LOOP: Re-send offer if it gets deleted by 'ghost' tabs
         const persistenceTimer = setInterval(async () => {
           if ((status as string) === 'connected') {
             clearInterval(persistenceTimer);
@@ -190,7 +195,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           }
           const snap = await get(ref(rtdb, path));
           if (!snap.exists() || !snap.val().offer) {
-            addLog("Offer lost! Re-sending...");
+            addLog("Signal lost! Restoring...");
             await sendOffer();
           }
         }, 3000);
@@ -201,7 +206,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         hasInitiated.current = false;
       }
     };
-
     startCallHandshake();
   }, [isIncoming, status, user, call.recipientId, call.callerId, addLog, localStream, internalCall.callType, internalCall.type, internalCall]);
 
@@ -224,7 +228,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     }
 
     if (!currentOffer) {
-      addLog("Wait for caller signal...");
+      addLog("Wait for caller...");
       setIsAccepting(false);
       return;
     }
@@ -234,8 +238,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     try {
       const callType = (internalCall.callType || internalCall.type || 'audio') as any;
       const stream = await callManager.startLocalStream(callType);
-      stream.getAudioTracks().forEach(track => { track.enabled = true; });
-      setIsMuted(false);
+      stream.getAudioTracks().forEach(t => { t.enabled = true; });
       setLocalStream(stream);
       addLog("Media OK. Handshaking...");
 
@@ -245,11 +248,15 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           addLog("Stream OK!");
           setRemoteStream(remote); 
           setStatus('connected'); 
+          setIsAccepting(false); // Force accepting off
           startVolumeMonitor(remote);
         },
         (state) => { 
           addLog(`PC: ${state}`);
-          if (state === 'connected') setStatus('connected'); 
+          if (state === 'connected') {
+            setStatus('connected');
+            setIsAccepting(false); // Force accepting off
+          }
         }
       );
 
@@ -269,7 +276,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       }));
 
       await set(ref(rtdb, path), sanitizedAnswer);
-      setIsAccepting(false);
     } catch (e: any) {
       addLog(`Fail: ${e.message}`);
       setIsAccepting(false);
@@ -330,8 +336,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v229">
-             <span>v2.2.9</span>
+          <div className="call-badge version-v230">
+             <span>v2.3.0</span>
           </div>
         </div>
 
@@ -340,8 +346,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
           ) : (
             <div className="call-avatar-view">
-              <div className="call-avatar-circle" style={{ boxShadow: `0 0 ${remoteVolume * 2}px var(--primary)` }}>
-                {status === 'connected' && <div className="call-ping" style={{ opacity: Math.max(0.3, remoteVolume / 50) }}></div>}
+              <div className="call-avatar-circle" style={{ boxShadow: `0 0 ${remoteVolume * 3}px var(--primary)` }}>
+                {status === 'connected' && <div className="call-ping" style={{ opacity: Math.max(0.3, remoteVolume / 40) }}></div>}
                 <div className="avatar-inner-box">
                    {remoteAvatar ? (
                      <img src={remoteAvatar} alt="Avatar" className="avatar-img" />
@@ -358,14 +364,20 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                    status === 'connecting' ? 'CONNECTING...' : 'CALLING...'}
                 </p>
                 {status === 'connected' && (
-                  <div style={{ display: 'flex', gap: '2px', height: '10px', alignItems: 'flex-end', marginTop: '10px', justifyContent: 'center' }}>
-                    {[1,2,3,4,5].map(i => (
-                      <div key={i} style={{ width: '4px', background: 'var(--primary)', borderRadius: '2px', height: `${Math.random() * remoteVolume}%`, minHeight: '2px', transition: 'height 0.1s' }} />
+                  <div className="mic-meter">
+                    {[1,2,3,4,5,6,7,8].map(i => (
+                      <div key={i} className="mic-bar" style={{ height: `${Math.random() * remoteVolume * 1.5}%` }} />
                     ))}
                   </div>
                 )}
               </div>
             </div>
+          )}
+
+          {status === 'connected' && (
+            <button className="force-audio-btn" onClick={forceAudioPlay}>
+               <Volume2 size={16} /> 📢 FIX AUDIO
+            </button>
           )}
 
           {(internalCall.callType || internalCall.type) === 'video' && localStream && (
@@ -379,7 +391,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.2.9)</span>
+                <span>SIGNALING LOGS (v2.3.0)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
@@ -401,19 +413,20 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
               <PhoneOff size={32} />
             </button>
             <button onClick={() => setIsSpeakerOff(!isSpeakerOff)} className={`call-btn ${isSpeakerOff ? 'active' : ''}`}>
-              <Volume2 />
+              {isSpeakerOff ? <VolumeX /> : <Volume2 />}
             </button>
           </div>
 
           <div className="call-btn-group">
-            {status === 'incoming' && (
-              <button 
-                onClick={handleAccept} 
-                disabled={isAccepting}
-                className={`call-btn success ringing`}
-              >
-                {isAccepting ? <Loader className="animate-spin" /> : (internalCall.offer ? <Phone size={32} /> : <UserCheck size={32} />)}
+            {status === 'incoming' && !isAccepting && (
+              <button onClick={handleAccept} className="call-btn success ringing">
+                <Phone size={32} />
               </button>
+            )}
+            {isAccepting && (
+              <div className="call-btn connecting">
+                <Loader className="animate-spin" />
+              </div>
             )}
             <button onClick={() => setShowConsole(!showConsole)} className={`call-btn ${showConsole ? 'active' : ''}`}>
               <Terminal />
@@ -421,6 +434,49 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           </div>
         </div>
       </div>
+      
+      <style>{`
+        .force-audio-btn {
+          position: absolute;
+          bottom: 120px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-weight: bold;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          z-index: 100;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: translateX(-50%) scale(1); }
+          50% { transform: translateX(-50%) scale(1.05); }
+          100% { transform: translateX(-50%) scale(1); }
+        }
+        .mic-meter {
+          display: flex;
+          gap: 3px;
+          height: 15px;
+          align-items: flex-end;
+          margin-top: 15px;
+          justify-content: center;
+        }
+        .mic-bar {
+          width: 5px;
+          background: var(--primary);
+          border-radius: 2px;
+          min-height: 2px;
+          transition: height 0.1s ease;
+        }
+      `}</style>
     </div>
   );
 };
