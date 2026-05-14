@@ -8,8 +8,6 @@ import {
   Loader,
   Activity,
   Lock,
-  Terminal,
-  RefreshCw,
   VolumeX
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -19,7 +17,7 @@ import { rtdb } from "../../services/firebase";
 import { endCall } from "../../services/chatService";
 import { callManager, type CallSession } from "../../services/callManager";
 
-// v2.4.4 BUILD 1757
+// v2.4.4 BUILD 1757 - CLEAN PRODUCTION
 
 interface CallOverlayProps {
   call: CallSession & { 
@@ -42,10 +40,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOff, setIsSpeakerOff] = useState(false);
-  const [showConsole, setShowConsole] = useState(true);
-  const [logs, setLogs] = useState<string[]>([]);
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
   const [connectionTime, setConnectionTime] = useState(0);
   const [remoteVolume, setRemoteVolume] = useState(0);
   const hasInitiated = useRef(false);
@@ -55,7 +50,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const logsEndRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef(status);
   const shouldEndCall = useRef(true);
 
@@ -63,22 +57,11 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     statusRef.current = status;
   }, [status]);
 
-  const addLog = useCallback((msg: string) => {
-    setLogs(prev => [ `${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 30)]);
-  }, []);
-
-  useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs]);
-
   const forceAudioPlay = () => {
-    addLog("Forcing audio playback...");
     if (remoteAudioRef.current) {
       remoteAudioRef.current.muted = false;
       remoteAudioRef.current.volume = 1.0;
-      remoteAudioRef.current.play().catch(e => addLog(`Play fail: ${e.message}`));
+      remoteAudioRef.current.play().catch(() => {});
     }
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume();
@@ -88,33 +71,28 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const manualSync = useCallback(async () => {
     if (!user) return;
     const path = `calls/${call.recipientId}/${call.callerId}`;
-    addLog(`Deep Sync: ${path}`);
     try {
       const snapshot = await get(ref(rtdb, path));
       if (snapshot.exists()) {
         const data = snapshot.val();
-        addLog(`Found: ${data.status} | O: ${!!data.offer} | A: ${!!data.answer}`);
         setInternalCall(prev => ({ ...prev, ...data }));
         if (data.status === 'connected' && status !== 'connected') setStatus('connected');
         return data;
       }
-    } catch (e: any) {
-      addLog(`Sync Err: ${e.message}`);
-    }
+    } catch (e) {}
     return null;
-  }, [user, call.recipientId, call.callerId, status, addLog]);
+  }, [user, call.recipientId, call.callerId, status]);
 
   const handleEnd = useCallback(async (reason: string = 'User Action') => {
     if (!shouldEndCall.current) return;
     shouldEndCall.current = false;
-    addLog(`Ending: ${reason}`);
     await callManager.cleanup();
     if (audioContextRef.current) audioContextRef.current.close();
     try {
       await endCall(call.recipientId, call.callerId);
     } catch (e) {}
     onClose();
-  }, [call.recipientId, call.callerId, onClose, addLog]);
+  }, [call.recipientId, call.callerId, onClose]);
 
   useEffect(() => {
     if (!user) return;
@@ -123,7 +101,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     onValue(callRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
-        // If data is null, it means the other side removed the call node.
         handleEnd('Signal Terminated');
         return;
       }
@@ -163,23 +140,19 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
     const startCallHandshake = async () => {
       try {
-        addLog("Media init...");
         const callType = (internalCall.callType || internalCall.type || 'audio') as any;
         const stream = await callManager.startLocalStream(callType);
         stream.getAudioTracks().forEach(t => { t.enabled = true; });
         setLocalStream(stream);
-        addLog("Media OK. Sending Offer...");
 
         const pc = await callManager.createPeerConnection(
           stream,
           (remote) => { 
-            addLog("Stream OK!");
             setRemoteStream(remote); 
             setStatus('connected');
             startVolumeMonitor(remote);
           },
           (state) => { 
-            addLog(`PC: ${state}`); 
             if (state === 'connected') setStatus('connected'); 
           }
         );
@@ -210,45 +183,39 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           }
           const snap = await get(ref(rtdb, path));
           if (!snap.exists() || !snap.val().offer) {
-            addLog("Signal lost! Restoring...");
             await sendOffer();
           }
         }, 5000);
 
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
       } catch (err: any) {
-        addLog(`Error: ${err.message}`);
         hasInitiated.current = false;
       }
     };
     startCallHandshake();
-  }, [isIncoming, status, user, call.recipientId, call.callerId, addLog, localStream, internalCall.callType, internalCall.type, internalCall]);
+  }, [isIncoming, status, user, call.recipientId, call.callerId, localStream, internalCall.callType, internalCall.type, internalCall]);
 
   useEffect(() => {
     if (!isIncoming && internalCall.answer && status !== 'connected') {
-      addLog("SIGNAL SYNC: Answer applied.");
       callManager.setRemoteDescription(internalCall.answer);
     }
 
     if (!isIncoming && status === 'connecting') {
       const watchdog = setTimeout(() => {
         if (statusRef.current !== 'connected') {
-          addLog("Connection slow. Self-healing...");
           manualSync();
         }
       }, 15000);
       return () => clearTimeout(watchdog);
     }
-  }, [internalCall.answer, isIncoming, status, addLog, manualSync]);
+  }, [internalCall.answer, isIncoming, status, manualSync]);
 
   const handleAccept = useCallback(async () => {
     if (isAccepting) return;
     setIsAccepting(true);
-    addLog("Accepting...");
 
     const acceptTimeout = setTimeout(() => {
       if (statusRef.current !== 'connected') {
-        addLog("Accept timeout. Resetting...");
         setIsAccepting(false);
         setStatus('incoming');
       }
@@ -261,7 +228,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     }
 
     if (!currentOffer) {
-      addLog("Wait for caller...");
       setIsAccepting(false);
       clearTimeout(acceptTimeout);
       return;
@@ -274,12 +240,10 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const stream = await callManager.startLocalStream(callType);
       stream.getAudioTracks().forEach(t => { t.enabled = true; });
       setLocalStream(stream);
-      addLog("Media OK. Handshaking...");
 
       const pc = await callManager.createPeerConnection(
         stream,
         (remote) => { 
-          addLog("Stream OK!");
           setRemoteStream(remote); 
           setStatus('connected'); 
           setIsAccepting(false);
@@ -287,7 +251,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           startVolumeMonitor(remote);
         },
         (state) => { 
-          addLog(`PC: ${state}`);
           if (state === 'connected') {
             setStatus('connected');
             setIsAccepting(false);
@@ -312,19 +275,17 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
       await update(ref(rtdb, path), updates);
     } catch (e: any) {
-      addLog(`Fail: ${e.message}`);
       setIsAccepting(false);
       clearTimeout(acceptTimeout);
       handleEnd('Error');
     }
-  }, [internalCall, call.recipientId, call.callerId, isAccepting, handleEnd, manualSync, addLog]);
+  }, [internalCall, call.recipientId, call.callerId, isAccepting, handleEnd, manualSync]);
 
   const toggleMute = () => {
     if (localStream) {
       const newState = !isMuted;
       localStream.getAudioTracks().forEach(t => { t.enabled = !newState; });
       setIsMuted(newState);
-      addLog(newState ? "Mic Muted" : "Mic Active");
     }
   };
 
@@ -333,7 +294,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const newState = !isVideoOff;
       localStream.getVideoTracks().forEach(t => { t.enabled = !newState; });
       setIsVideoOff(newState);
-      addLog(newState ? "Camera Off" : "Camera On");
     }
   };
 
@@ -436,9 +396,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           )}
         </div>
 
-          </AnimatePresence>
-        </div>
-
         <div className="call-actions-bar enhanced-controls">
           <AnimatePresence mode="wait">
             {status === 'incoming' && !isAccepting ? (
@@ -477,13 +434,15 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                 animate={{ y: 0, opacity: 1 }}
                 className="call-btn-group"
               >
-                <button 
-                  onClick={toggleVideo} 
-                  className={`call-btn large ${isVideoOff ? 'active warning' : ''}`} 
-                >
-                  {isVideoOff ? <MicOff size={28} /> : <Phone size={28} />}
-                  <span className="btn-label">{isVideoOff ? 'CAM OFF' : 'CAM ON'}</span>
-                </button>
+                {(internalCall.callType || internalCall.type) === 'video' && (
+                  <button 
+                    onClick={toggleVideo} 
+                    className={`call-btn large ${isVideoOff ? 'active warning' : ''}`} 
+                  >
+                    {isVideoOff ? <MicOff size={28} /> : <Phone size={28} />}
+                    <span className="btn-label">{isVideoOff ? 'CAM OFF' : 'CAM ON'}</span>
+                  </button>
+                )}
 
                 <button 
                   onClick={toggleMute} 
@@ -560,12 +519,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
           70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
           100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-
-        .console-btn {
-          position: absolute;
-          right: 30px;
-          bottom: 0;
         }
 
         .force-audio-btn {
