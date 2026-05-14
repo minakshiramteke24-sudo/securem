@@ -286,12 +286,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         </AnimatePresence>
 
         <form onSubmit={handleSend} className="chat-input-container">
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              {uploading ? <Loader2 size={24} className="animate-spin" /> : <Paperclip size={24} />}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={uploading}
+              style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '12px' }}
+            >
+              {uploading ? <Loader2 size={24} className="animate-spin" /> : <Paperclip size={24} color="#a5b4fc" />}
             </button>
-            <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-              <Smile size={24} color={showEmojiPicker ? 'var(--primary)' : 'currentColor'} />
+            <button 
+              type="button" 
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '12px' }}
+            >
+              <Smile size={24} color={showEmojiPicker ? '#6366f1' : '#fbbf24'} />
             </button>
           </div>
           <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
@@ -304,7 +313,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             onChange={(e) => setInputText(e.target.value)} 
             onFocus={() => setShowEmojiPicker(false)}
           />
-          <button type="submit" className="send-btn"><Send size={22} /></button>
+          <button type="submit" className="send-btn" style={{ background: '#6366f1', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Send size={22} />
+          </button>
         </form>
       </div>
 
