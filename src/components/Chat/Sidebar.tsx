@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
     return () => observer.disconnect();
   }, []);
 
-  const dotColor = isDarkMode ? "#ffffff" : "#1c1e21";
+
 
   useEffect(() => {
     if (user) {
@@ -92,11 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleProfileMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setProfileMenuOpen({ x: rect.right, y: rect.bottom });
-  };
+
 
   const openChatMenu = (e: React.MouseEvent, chatId: string, recipientName: string) => {
     e.stopPropagation();

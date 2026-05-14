@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Loader2, Smile, X, Mic, Trash2, Search
+  Shield, Smile, X, Mic, Trash2, Search, MoreVertical
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -47,19 +47,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
   const [uploading, setUploading] = useState(false);
   const [activeTransfer, setActiveTransfer] = useState<TransferSession | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimerRef = useRef<any>(null);
   const prevMsgCount = useRef(0);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
