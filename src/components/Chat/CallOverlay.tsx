@@ -367,8 +367,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v240">
-             <span>v2.4.0</span>
+          <div className="call-badge version-v241">
+             <span>v2.4.1</span>
           </div>
         </div>
 
@@ -422,7 +422,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.4.0)</span>
+                <span>SIGNALING LOGS (v2.4.1)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
