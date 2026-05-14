@@ -14,6 +14,7 @@ export interface Story {
     title: string;
     artist: string;
   };
+  views?: Record<string, { username: string, avatar?: string, timestamp: number }>;
 }
 
 const STORY_DURATION = 24 * 60 * 60 * 1000; // 24 hours
@@ -60,4 +61,13 @@ export const subscribeToActiveStories = (callback: (stories: Story[]) => void) =
 export const deleteStory = async (storyId: string) => {
   const storyRef = ref(rtdb, `stories/${storyId}`);
   await set(storyRef, null);
+};
+
+export const markStoryAsSeen = async (storyId: string, viewer: { uid: string, username: string, avatar?: string }) => {
+  const viewRef = ref(rtdb, `stories/${storyId}/views/${viewer.uid}`);
+  await set(viewRef, {
+    username: viewer.username,
+    avatar: viewer.avatar || null,
+    timestamp: Date.now()
+  });
 };

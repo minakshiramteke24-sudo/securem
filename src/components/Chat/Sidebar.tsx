@@ -213,55 +213,54 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
       {/* STORIES REEL */}
       {!searchTerm && (
-        <div className="stories-container">
-          <div className="story-item add-story" onClick={() => setIsCreatorOpen(true)}>
-            <div className="story-ring">
-              <div className="avatar">
-                {profile?.avatar ? <img src={profile.avatar} alt="Me" /> : profile?.username?.[0].toUpperCase()}
-              </div>
-              <div className="plus-icon">
-                {isPostingStory ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Plus size={10} /></motion.div> : <Plus size={12} strokeWidth={4} />}
-              </div>
-            </div>
-            <span className="story-username">My Story</span>
+        <div className="story-bar-premium">
+             <motion.div 
+               className="story-item my-story"
+               whileHover={{ scale: 1.05 }}
+               onClick={() => setIsPostingStory(true)}
+             >
+               <div className="story-ring mine">
+                 <div className="avatar">
+                   {user?.photoURL ? <img src={user.photoURL} alt="Me" /> : user?.displayName?.[0] || "Y"}
+                   <div className="add-icon">+</div>
+                 </div>
+               </div>
+               <span className="story-username">My Story</span>
+             </motion.div>
+
+             <AnimatePresence>
+                {isPostingStory && (
+                  <StoryCreator 
+                    onClose={() => setIsPostingStory(false)}
+                    onPost={async (type, content, musicData) => {
+                      if (user) {
+                        await postStory(user.uid, user.displayName || "Secure User", user.photoURL || undefined, type, content, musicData);
+                        setIsPostingStory(false);
+                      }
+                    }}
+                  />
+                )}
+             </AnimatePresence>
+
+             {stories.map((story, idx) => (
+               <motion.div
+                 key={story.id}
+                 className="story-item"
+                 initial={{ opacity: 0, scale: 0.8 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 whileHover={{ scale: 1.05 }}
+                 whileTap={{ scale: 0.95 }}
+                 onClick={() => setActiveStoryIndex(idx)}
+               >
+                 <div className="story-ring active">
+                   <div className="avatar">
+                     {story.avatar ? <img src={story.avatar} alt={story.username} /> : story.username[0].toUpperCase()}
+                   </div>
+                 </div>
+                 <span className="story-username">{story.username}</span>
+               </motion.div>
+             ))}
           </div>
-
-          <AnimatePresence>
-            {isCreatorOpen && (
-              <StoryCreator
-                initialType={creatorType}
-                onClose={() => { setIsCreatorOpen(false); setCreatorType(null); }}
-                onPost={async (type, content, musicData) => {
-                  if (!user || !profile) return;
-                  setIsPostingStory(true);
-                  try {
-                    await postStory(user.uid, profile.username || "Secure User", profile.avatar, type, content, musicData);
-                  } finally {
-                    setIsPostingStory(false);
-                  }
-                }}
-              />
-            )}
-          </AnimatePresence>
-
-          {stories.map((story, idx) => (
-            <motion.div
-              key={story.id}
-              className="story-item"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setActiveStoryIndex(idx)}
-            >
-              <div className="story-ring active">
-                <div className="avatar">
-                  {story.avatar ? <img src={story.avatar} alt={story.username} /> : story.username[0].toUpperCase()}
-                </div>
-              </div>
-              <span className="story-username">{story.username}</span>
-            </motion.div>
-          ))}
-        </div>
       )}
 
       {/* CHAT LIST / SEARCH RESULTS */}
@@ -432,6 +431,106 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         SECUREM v2.4.4 • Build 1757
       </div>
 
+      <style>{`
+        .story-bar-premium {
+          display: flex;
+          gap: 1rem;
+          padding: 1.25rem;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          margin-bottom: 0.5rem;
+        }
+        .story-bar-premium::-webkit-scrollbar { display: none; }
+
+        .story-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          cursor: pointer;
+          min-width: 75px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .story-ring {
+          position: relative;
+          padding: 3px;
+          border-radius: 24px;
+          background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .story-ring.mine {
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px dashed rgba(255, 255, 255, 0.15);
+          padding: 2px;
+        }
+
+        .story-ring.active {
+          animation: ring-pulse 2.5s infinite ease-in-out;
+        }
+
+        @keyframes ring-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(220, 39, 67, 0.4); transform: scale(1); }
+          50% { box-shadow: 0 0 0 10px rgba(220, 39, 67, 0); transform: scale(1.02); }
+          100% { box-shadow: 0 0 0 0 rgba(220, 39, 67, 0); transform: scale(1); }
+        }
+
+        .avatar {
+          width: 56px;
+          height: 56px;
+          border-radius: 20px;
+          background: var(--bg-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 1.2rem;
+          border: 3px solid #1a1a1a;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .add-icon {
+          position: absolute;
+          bottom: -2px;
+          right: -2px;
+          background: var(--primary);
+          color: white;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          border: 3px solid #1a1a1a;
+          font-weight: bold;
+        }
+
+        .story-username {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          width: 70px;
+          text-align: center;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          opacity: 0.8;
+        }
+      `}</style>
     </aside>
   );
 };
