@@ -335,7 +335,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const remoteAvatar = internalCall.remoteAvatar;
 
   return (
-    <div className="call-overlay">
+    <div className="call-overlay" onClick={forceAudioPlay}>
       <div className="call-container">
         <audio ref={remoteAudioRef} autoPlay playsInline />
         
@@ -376,9 +376,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                    status === 'connecting' ? 'CONNECTING...' : 'CALLING...'}
                 </p>
               </div>
-            </div>
-          )}
-
             </div>
           )}
 
