@@ -1556,3 +1556,19 @@ input:focus {
  letter-spacing: 0.05em;
  border: 1px solid rgba(var(--primary-rgb), 0.1);
 }
+
+/* --- LIGHT MODE REFINEMENTS (v2.4.4) --- */
+[data-theme=" light\] .header-left .avatar {
+ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+ border: none !important;
+}
+
+[data-theme=\light\] .chat-input {
+ background: #f1f5f9 !important;
+ border: 1px solid rgba(0, 0, 0, 0.05) !important;
+ color: #0f172a !important;
+}
+
+[data-theme=\light\] .chat-input::placeholder {
+ color: #94a3b8 !important;
+}

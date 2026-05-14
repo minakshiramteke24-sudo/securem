@@ -520,7 +520,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           justify-content: center;
           font-weight: bold;
           font-size: 1.2rem;
-          border: 3px solid #1a1a1a;
+          border: 3px solid var(--bg-dark);
           overflow: hidden;
           position: relative;
         }
@@ -544,7 +544,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           align-items: center;
           justify-content: center;
           font-size: 14px;
-          border: 3px solid #1a1a1a;
+          border: 3px solid var(--bg-dark);
           font-weight: bold;
         }
 
@@ -656,7 +656,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           align-items: center;
           justify-content: center;
           font-size: 14px;
-          border: 2px solid #1a1a1a;
+          border: 2px solid var(--bg-dark);
         }
 
         .story-info { display: flex; flex-direction: column; gap: 2px; }
