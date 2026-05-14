@@ -57,6 +57,7 @@ const LoadingSkeleton = () => (
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
+          className="loading-text-main"
           style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem", background: "linear-gradient(135deg, var(--primary), #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
         >
           Securem
@@ -65,6 +66,7 @@ const LoadingSkeleton = () => (
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.6 }}
           transition={{ delay: 0.4 }}
+          className="loading-text-muted"
           style={{ fontSize: "0.875rem", letterSpacing: "0.1em", textTransform: "uppercase" }}
         >
           Preparing secure environment

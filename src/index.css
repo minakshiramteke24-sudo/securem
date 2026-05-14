@@ -1583,3 +1583,26 @@ input:focus {
 [data-theme="light"] .search-bar .search-icon {
   color: #64748b !important;
 }
+
+/* --- THEME REFINEMENTS (v2.4.4) --- */
+[data-theme="light"] .auth-container {
+  background: #f8fafc !important;
+}
+
+[data-theme="light"] .auth-card {
+  background: #ffffff !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.05) !important;
+}
+
+[data-theme="light"] .loading-text-main {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .loading-text-muted {
+  color: #64748b !important;
+}
+
+.avatar span {
+  color: #ffffff !important;
+  font-weight: 800;
+}
