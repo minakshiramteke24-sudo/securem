@@ -220,12 +220,28 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
             {activeTab === 'privacy' && (
               <div className="settings-section">
                 <div className="settings-list">
+                  <div className="list-item toggle">
+                    <div className="item-info">
+                      <p className="title">Stealth Mode</p>
+                      <p className="desc">Hide your online status and last seen from everyone</p>
+                    </div>
+                    <label className="switch">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.privacy.stealthMode || false} 
+                        onChange={e => handleTogglePrivacy('stealthMode' as any, e.target.checked)} 
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+
                   <div className="list-item">
                     <div className="item-info">
                       <p className="title">Last Seen</p>
                       <p className="desc">Who can see when you were last online</p>
                     </div>
                     <select 
+                      disabled={settings.privacy.stealthMode}
                       value={settings.privacy.lastSeen} 
                       onChange={e => handleTogglePrivacy('lastSeen', e.target.value)}
                     >
@@ -290,6 +306,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
                   </div>
 
                   <div className="appearance-list">
+                    <div className="list-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
+                      <div className="item-info">
+                        <p className="title">Chat Wallpaper</p>
+                        <p className="desc">Personalize your conversation background</p>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', width: '100%' }}>
+                        {[
+                          'default', '#1a1a1a', '#0f172a', '#1e1b4b', '#134e4a', 
+                          '#4c1d95', '#701a75', '#450a0a', '#064e3b', '#1e293b'
+                        ].map(color => (
+                          <button
+                            key={color}
+                            onClick={() => handleToggleAppearance('wallpaper' as any, color)}
+                            style={{ 
+                              width: '100%', 
+                              paddingBottom: '100%', 
+                              background: color === 'default' ? 'var(--bg-dark)' : color,
+                              borderRadius: '12px',
+                              border: (settings.appearance as any).wallpaper === color ? '3px solid var(--primary)' : '1px solid var(--border)',
+                              position: 'relative'
+                            }}
+                            title={color}
+                          >
+                            {color === 'default' && <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--text-main)' }}>DEF</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="list-item toggle">
                       <div className="item-info">
                         <p className="title">Glassmorphism</p>

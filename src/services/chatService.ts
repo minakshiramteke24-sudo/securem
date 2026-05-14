@@ -601,12 +601,35 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
     const enrichedChats = await Promise.all(
       chatEntries.map(async ([chatId, info]: [string, any]) => {
         const summary = info.summary || {};
-        const recipientId = summary.recipientId;
+        let recipientId = summary.recipientId;
+        
+        // Robust fallback: if recipientId is missing, try to derive it from chatId
+        if (!recipientId && chatId.includes('_')) {
+          const parts = chatId.split('_');
+          recipientId = parts.find(id => id !== uid);
+        }
+        
         if (!recipientId) return null;
-        const recipient = await getUserProfile(recipientId);
-        return recipient ? { id: chatId, ...summary, recipient, isUnread: summary.isUnread, isPinned: summary.isPinned } : null;
+        
+        try {
+          const recipient = await getUserProfile(recipientId);
+          if (!recipient) return null;
+          
+          return { 
+            id: chatId, 
+            ...summary, 
+            recipient, 
+            isUnread: summary.isUnread || false, 
+            isPinned: summary.isPinned || false,
+            updatedAt: summary.updatedAt || info.updatedAt || 0
+          };
+        } catch (e) {
+          console.error("[ChatService] Failed to enrich chat:", chatId, e);
+          return null;
+        }
       })
     );
+    
     const validChats = enrichedChats
       .filter(c => c !== null)
       .sort((a, b) => {
@@ -614,6 +637,7 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
         if (!a.isPinned && b.isPinned) return 1;
         return (b.updatedAt || 0) - (a.updatedAt || 0);
       });
+      
     callback(validChats);
   });
 };

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Loader2, Smile, X, Mic
+  Shield, Loader2, Smile, X, Mic, Trash2, Search
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -35,7 +35,7 @@ interface ChatWindowProps {
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBack }) => {
-  const { user, profile } = useAuth();
+  const { user, profile, settings } = useAuth();
   const { signingPrivateKey } = useCrypto();
   
   const [messages, setMessages] = useState<any[]>([]);
@@ -60,6 +60,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const recordingTimerRef = useRef<any>(null);
+  const prevMsgCount = useRef(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const initChat = async () => {
@@ -101,7 +104,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   }, [chatId, user, recipient.uid]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > prevMsgCount.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMsgCount.current = messages.length;
   }, [messages, recipientTyping]);
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -193,8 +199,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      const stream = mediaRecorderRef.current.stream;
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => track.stop());
       clearInterval(recordingTimerRef.current);
       setIsRecording(false);
       
@@ -220,6 +227,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       };
     }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
 
   const handleSelectMessage = (id: string, _multi: boolean, _text?: string) => {
     // Selection logic
@@ -287,44 +305,83 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             </motion.div>
           ) : (
             <motion.header key="header" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="chat-header">
-              <div className="header-left" onClick={() => setShowProfile(true)} style={{ cursor: "pointer" }}>
-                {onBack && (
-                  <button className="back-btn" onClick={(e) => { e.stopPropagation(); onBack(); }}>
-                    <ArrowLeft size={24} />
+              {isSearching ? (
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '10px' }}>
+                  <button onClick={() => { setIsSearching(false); setSearchQuery(""); }} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
+                    <ArrowLeft size={20} />
                   </button>
-                )}
-                <div className="avatar">
-                  {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" /> : <span>{recipient?.username?.[0]?.toUpperCase()}</span>}
+                  <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="Search in conversation..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ 
+                      flex: 1, 
+                      background: 'rgba(255,255,255,0.05)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: '12px', 
+                      padding: '8px 15px', 
+                      color: 'var(--text-main)',
+                      outline: 'none'
+                    }}
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery("")} style={{ background: 'transparent', color: 'var(--text-muted)' }}>
+                      <X size={16} />
+                    </button>
+                  )}
                 </div>
-                <div className="header-info">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h3>{recipient?.username || "Secure User"}</h3>
+              ) : (
+                <>
+                  <div className="header-left" onClick={() => setShowProfile(true)} style={{ cursor: "pointer" }}>
+                    {onBack && (
+                      <button className="back-btn" onClick={(e) => { e.stopPropagation(); onBack(); }}>
+                        <ArrowLeft size={24} />
+                      </button>
+                    )}
+                    <div className="avatar">
+                      {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" /> : <span>{recipient?.username?.[0]?.toUpperCase()}</span>}
+                    </div>
+                    <div className="header-info">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <h3>{recipient?.username || "Secure User"}</h3>
+                      </div>
+                      <p className="status-text">{recipientTyping ? "typing..." : recipient?.status || "Online"}</p>
+                    </div>
                   </div>
-                  <p className="status-text">{recipientTyping ? "typing..." : recipient?.status || "Online"}</p>
-                </div>
-              </div>
-              <div className="header-actions">
-                <button onClick={() => onInitiateCall({ 
-                  type: 'audio', 
-                  recipientId: recipient.uid,
-                  chatId: chatId,
-                  recipientUsername: recipient.username,
-                  recipientAvatar: recipient.avatar
-                })}><Phone size={20} /></button>
-                <button onClick={() => onInitiateCall({ 
-                  type: 'video', 
-                  recipientId: recipient.uid,
-                  chatId: chatId,
-                  recipientUsername: recipient.username,
-                  recipientAvatar: recipient.avatar
-                })}><Video size={20} /></button>
-              </div>
+                  <div className="header-actions">
+                    <button onClick={() => setIsSearching(true)}><Search size={20} /></button>
+                    <button onClick={() => onInitiateCall({ 
+                      type: 'audio', 
+                      recipientId: recipient.uid,
+                      chatId: chatId,
+                      recipientUsername: recipient.username,
+                      recipientAvatar: recipient.avatar
+                    })}><Phone size={20} /></button>
+                    <button onClick={() => onInitiateCall({ 
+                      type: 'video', 
+                      recipientId: recipient.uid,
+                      chatId: chatId,
+                      recipientUsername: recipient.username,
+                      recipientAvatar: recipient.avatar
+                    })}><Video size={20} /></button>
+                  </div>
+                </>
+              )}
             </motion.header>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="messages-area">
+      <div 
+        className="messages-area" 
+        style={{ 
+          background: settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
+            ? settings.appearance.wallpaper 
+            : undefined 
+        }}
+      >
         {messages.map((msg) => {
           const repliedMsgData = msg.replyTo ? messages.find(m => m.id === msg.replyTo) : null;
           const repliedMessage = repliedMsgData ? {
@@ -342,6 +399,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               onReaction={(emoji) => toggleReaction(chatId!, msg.id, user!.uid, emoji)}
               onOpenMedia={(url) => setLightboxUrl(url)}
               repliedMessage={repliedMessage}
+              searchQuery={searchQuery}
             />
           );
         })}
@@ -426,60 +484,193 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             </button>
           </div>
           <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-          <input 
-            ref={inputRef} 
-            type="text" 
-            className="chat-input" 
-            placeholder="Type a secure message..." 
-            value={inputText} 
-            onChange={(e) => setInputText(e.target.value)} 
-            onFocus={() => setShowEmojiPicker(false)}
-            disabled={isRecording}
-          />
           
-          {inputText.trim() === "" && !isRecording ? (
-            <button 
-              type="button" 
-              className="send-btn" 
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onMouseLeave={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              style={{ background: '#ec4899', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Mic size={22} />
-            </button>
-          ) : isRecording ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 10px' }}>
+          <AnimatePresence mode="wait">
+            {isRecording ? (
               <motion.div 
-                animate={{ scale: [1, 1.2, 1] }} 
-                transition={{ repeat: Infinity, duration: 1 }}
-                style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }}
+                key="recording-bar"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '15px', 
+                  padding: '0 15px', 
+                  background: 'transparent', 
+                  flex: 1,
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <motion.button
+                    whileHover={{ scale: 1.1, color: '#ef4444' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (mediaRecorderRef.current) {
+                        const stream = mediaRecorderRef.current.stream;
+                        mediaRecorderRef.current.onstop = null;
+                        mediaRecorderRef.current.stop();
+                        stream.getTracks().forEach(track => track.stop());
+                      }
+                      setIsRecording(false);
+                      setRecordingDuration(0);
+                    }}
+                    style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: '600' }}
+                  >
+                    <Trash2 size={18} />
+                    Cancel
+                  </motion.button>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <motion.div 
+                      animate={{ opacity: [1, 0, 1] }} 
+                      transition={{ repeat: Infinity, duration: 1.2 }}
+                    >
+                      <Mic size={18} color="#ef4444" />
+                    </motion.div>
+                    <span style={{ color: 'var(--text-main)', fontWeight: '700', fontSize: '1rem', fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+
+                <motion.div 
+                  animate={{ x: [-5, 5, -5] }} 
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}
+                >
+                  <ArrowLeft size={14} />
+                  <span>Slide to cancel</span>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.input
+                key="chat-input"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                ref={inputRef}
+                type="text"
+                placeholder="Type a secure message..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                className="chat-input"
+                style={{ flex: 1 }}
               />
-              <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
-                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
-          ) : (
-            <button type="submit" className="send-btn" style={{ background: '#6366f1', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Send size={22} />
-            </button>
-          )}
+            )}
+          </AnimatePresence>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            {(inputText.trim() === "" || isRecording) && (
+              <motion.button 
+                type="button" 
+                className="send-btn" 
+                drag={isRecording ? "x" : false}
+                dragConstraints={{ left: -200, right: 0 }}
+                dragElastic={0.1}
+                onDrag={(_, info) => {
+                  if (info.offset.x < -120) {
+                    if (mediaRecorderRef.current) {
+                      const stream = mediaRecorderRef.current.stream;
+                      mediaRecorderRef.current.onstop = null;
+                      mediaRecorderRef.current.stop();
+                      stream.getTracks().forEach(track => track.stop());
+                    }
+                    setIsRecording(false);
+                    setRecordingDuration(0);
+                  }
+                }}
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onMouseLeave={() => {
+                  // Only stop if not dragging
+                  if (!isRecording) stopRecording();
+                }}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={isRecording ? { scale: 1.2, boxShadow: "0 0 30px rgba(236, 72, 153, 0.4)" } : {}}
+                style={{ 
+                  background: '#ec4899', 
+                  color: 'white', 
+                  borderRadius: '50%', 
+                  width: '52px', 
+                  height: '52px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: 'none',
+                  zIndex: 10
+                }}
+              >
+                <Mic size={24} />
+              </motion.button>
+            )}
+
+            {inputText.trim() !== "" && !isRecording && (
+              <motion.button 
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                whileHover={{ scale: 1.1, x: 5 }}
+                whileTap={{ scale: 0.9 }}
+                type="submit" 
+                onClick={handleSend}
+                className="send-btn" 
+                style={{ background: 'var(--primary)', color: 'white', borderRadius: '50%', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}
+              >
+                <Send size={24} />
+              </motion.button>
+            )}
+          </div>
         </form>
       </div>
 
       <AnimatePresence>
         {showProfile && (
-          <div className="profile-overlay" onClick={() => setShowProfile(false)}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="profile-card" onClick={e => e.stopPropagation()}>
-               <div className="profile-header">
-                 <h2>{recipient.username}</h2>
-                 <button onClick={() => setShowProfile(false)}>×</button>
+          <div 
+            className="profile-overlay" 
+            onClick={() => setShowProfile(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass profile-card" 
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '30px', width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            >
+               <button 
+                 onClick={() => setShowProfile(false)}
+                 style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+               >
+                 <X size={16} color="white" />
+               </button>
+               
+               <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden' }}>
+                 {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : recipient?.username?.[0]?.toUpperCase()}
                </div>
-               <div className="profile-body">
-                 <p>{recipient.bio || "No bio available."}</p>
-                 <div className="encryption-info"><Shield size={16} /> End-to-End Encrypted</div>
+               
+               <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
+               <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
+                 {recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online"}
+               </p>
+               
+               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '15px', width: '100%', marginBottom: '20px' }}>
+                 <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Bio</h4>
+                 <p style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center' }}>
+                   {recipient?.bio || (recipient?.status && recipient.status !== 'online' && recipient.status !== 'offline' ? recipient.status : "No bio available.")}
+                 </p>
+               </div>
+               
+               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
+                 <Shield size={16} /> 
+                 <span>End-to-End Encrypted</span>
                </div>
             </motion.div>
           </div>
@@ -495,54 +686,56 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="lightbox-overlay"
             onClick={() => setLightboxUrl(null)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 30000,
-              background: 'rgba(0,0,0,0.95)',
+            style={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              background: 'rgba(0,0,0,0.95)', 
               backdropFilter: 'blur(15px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'zoom-out',
-              padding: '20px'
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              zIndex: 9999,
+              padding: '40px'
             }}
           >
             <motion.img 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
               src={lightboxUrl} 
-              alt="Full size" 
+              alt="Fullscreen" 
               style={{ 
-                maxWidth: '95vw', 
-                maxHeight: '90vh', 
-                borderRadius: '16px',
-                boxShadow: '0 30px 60px rgba(0,0,0,0.8)',
-                objectFit: 'contain',
-                border: '1px solid rgba(255,255,255,0.1)'
+                maxWidth: '100%', 
+                maxHeight: '100%', 
+                borderRadius: '12px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                objectFit: 'contain'
               }} 
             />
-            <div 
-              className="lightbox-close"
+            <button 
               onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
               style={{ 
                 position: 'absolute', 
-                top: '30px', 
-                right: '30px', 
-                color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
+                top: '20px', 
+                right: '20px', 
+                background: 'rgba(255,255,255,0.1)', 
+                border: 'none', 
+                color: 'white', 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: 'pointer'
               }}
             >
-              <Shield size={32} style={{ opacity: 0.6 }} />
-              <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.4 }}>Secure</span>
-            </div>
+              <X size={24} />
+            </button>
           </motion.div>,
           document.body
         )}

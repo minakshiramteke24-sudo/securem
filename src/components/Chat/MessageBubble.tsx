@@ -16,6 +16,7 @@ interface MessageBubbleProps {
   onReaction?: (emoji: string) => void;
   onOpenMedia?: (url: string) => void;
   repliedMessage?: { sender: string, text: string } | null;
+  searchQuery?: string;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ 
@@ -25,7 +26,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onSelect, 
   onReaction,
   onOpenMedia,
-  repliedMessage 
+  repliedMessage,
+  searchQuery
 }) => {
   const { user } = useAuth();
   const { privateKey } = useCrypto();
@@ -34,6 +36,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [error, setError] = useState(false);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [decryptingMedia, setDecryptingMedia] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const longPressTimer = useRef<any>(null);
 
   const isMe = message.senderId === user?.uid;
@@ -124,6 +128,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderTextWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRegex).map((part, i) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a 
+            key={i} 
+            href={part} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              color: isMe ? "rgba(255,255,255,0.9)" : "var(--primary)", 
+              textDecoration: "underline",
+              fontWeight: 600,
+              wordBreak: "break-all"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   if (message.deleted) {
     return (
       <motion.div 
@@ -157,6 +187,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         </div>
       </motion.div>
     );
+  }
+
+  // Filter out messages that don't match the search query
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    const textMatch = decryptedText && decryptedText.toLowerCase().includes(query);
+    const mediaMatch = message.media?.name && message.media.name.toLowerCase().includes(query);
+    if (!textMatch && !mediaMatch) return null;
   }
 
   return (
@@ -288,7 +326,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             
             {decryptedText ? (
               <p style={{ wordBreak: "break-word", fontSize: "0.9375rem", color: "inherit", whiteSpace: "pre-wrap", margin: 0 }}>
-                {decryptedText}
+                {renderTextWithLinks(decryptedText)}
                 {message.edited && (
                   <span style={{ fontSize: "0.65rem", opacity: 0.6, marginLeft: "8px" }}>(edited)</span>
                 )}
@@ -308,8 +346,44 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   </div>
                 ) : mediaUrl ? (
                   message.media.type.startsWith('audio/') ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", minWidth: "200px" }}>
-                      <audio controls src={mediaUrl} style={{ height: "30px", width: "100%", outline: "none" }} onClick={e => e.stopPropagation()} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", minWidth: "220px" }}>
+                      <audio 
+                        ref={audioRef}
+                        controls 
+                        src={mediaUrl} 
+                        style={{ height: "30px", width: "100%", outline: "none" }} 
+                        onClick={e => e.stopPropagation()} 
+                      />
+                      <motion.button
+                        whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.2)' }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const speeds = [1, 1.5, 2, 3];
+                          const nextIndex = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
+                          const newSpeed = speeds[nextIndex];
+                          setPlaybackSpeed(newSpeed);
+                          if (audioRef.current) {
+                            audioRef.current.playbackRate = newSpeed;
+                          }
+                        }}
+                        style={{ 
+                          background: 'rgba(255,255,255,0.1)', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '8px', 
+                          padding: '4px 8px', 
+                          fontSize: '11px', 
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          minWidth: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {playbackSpeed}x
+                      </motion.button>
                     </div>
                   ) : message.media.type.startsWith('image/') ? (
                     <div style={{ position: 'relative' }}>

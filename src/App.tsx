@@ -4,7 +4,7 @@ import { useAuth } from "./context/AuthContext";
 import { useCrypto } from "./context/CryptoContext";
 import { type UserProfile } from "./services/userService";
 import { auth, rtdb } from "./services/firebase";
-import { ref, get, remove } from "firebase/database";
+import { ref, get, remove, set, onDisconnect, serverTimestamp } from "firebase/database";
 import { Lock } from "lucide-react";
 import { PrivacyPolicy, TermsOfService, AboutSecurem } from "./components/Pages/Legal";
 import { listenForCalls, startCall } from "./services/chatService";
@@ -107,6 +107,24 @@ const App: React.FC = () => {
     document.documentElement.setAttribute('data-glass', settings.appearance.glassmorphism.toString());
     document.documentElement.setAttribute('data-font-size', settings.appearance.fontSize);
   }, [settings.appearance.theme, settings.appearance.glassmorphism, settings.appearance.fontSize]);
+
+  // Presence System (Stealth Mode)
+  useEffect(() => {
+    if (!user) return;
+    const statusRef = ref(rtdb, `users/${user.uid}/status`);
+    const lastSeenRef = ref(rtdb, `users/${user.uid}/lastSeen`);
+
+    if (settings?.privacy?.stealthMode) {
+      set(statusRef, "offline");
+      set(lastSeenRef, serverTimestamp());
+      onDisconnect(statusRef).cancel();
+      onDisconnect(lastSeenRef).cancel();
+    } else {
+      set(statusRef, "online");
+      onDisconnect(statusRef).set("offline");
+      onDisconnect(lastSeenRef).set(serverTimestamp());
+    }
+  }, [user, settings?.privacy?.stealthMode]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();

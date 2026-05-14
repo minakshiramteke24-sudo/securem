@@ -9,12 +9,14 @@ export interface UserSettings {
     profilePhoto: 'everyone' | 'contacts' | 'nobody';
     readReceipts: boolean;
     typingIndicators: boolean;
+    stealthMode?: boolean;
   };
   appearance: {
     theme: 'dark' | 'light' | 'system';
     accentColor: string;
     glassmorphism: boolean;
     fontSize: 'small' | 'medium' | 'large';
+    wallpaper?: string;
   };
   chat: {
     wallpaper: string;
@@ -35,12 +37,14 @@ export const defaultSettings: UserSettings = {
     profilePhoto: 'everyone',
     readReceipts: true,
     typingIndicators: true,
+    stealthMode: false,
   },
   appearance: {
     theme: 'dark',
     accentColor: '#6366f1',
     glassmorphism: true,
     fontSize: 'medium',
+    wallpaper: 'default',
   },
   chat: {
     wallpaper: 'default',
