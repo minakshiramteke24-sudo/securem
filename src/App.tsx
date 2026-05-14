@@ -59,7 +59,7 @@ const LoadingSkeleton = () => (
           transition={{ delay: 0.2 }}
           style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem", background: "linear-gradient(135deg, var(--primary), #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
         >
-          Securem | v2.4.2
+          Securem
         </motion.div>
         <motion.div 
           initial={{ opacity: 0 }}
@@ -85,10 +85,6 @@ const App: React.FC = () => {
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [activeCall, setActiveCall] = useState<any>(null);
-
-  useEffect(() => {
-    console.log("%c        SECUREM v2.4.4 • Build 1757", "background: #6366f1; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
-  }, []);
 
   useEffect(() => {
     if (settings.appearance.theme) {
@@ -120,7 +116,6 @@ const App: React.FC = () => {
     let unsubscribe: () => void;
     const initializeSignaling = async () => {
       if (user && isUnlocked) {
-        // Clean slate on mount
         const callsRef = ref(rtdb, `calls/${user.uid}`);
         try {
           const snapshot = await get(callsRef);
@@ -247,9 +242,6 @@ const App: React.FC = () => {
         </motion.div>
       ) : (
         <div key="app" className={`app-container ${selectedRecipient ? 'has-selected-chat' : ''}`}>
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#ef4444', color: 'white', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', zIndex: 10000, padding: '4px' }}>
-            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.4.4</span> LATEST VERSION DEPLOYED: v2.4.4 - IF YOU SEE THIS, YOU ARE UPDATED.
-          </div>
           <Sidebar 
             onSelectChat={(_, recipient) => setSelectedRecipient(recipient)} 
             onShowSettings={() => setView("settings")}
@@ -330,7 +322,7 @@ const App: React.FC = () => {
                   </motion.div>
                   <h2 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>Your Privacy, Guaranteed.</h2>
                   <p style={{ color: "var(--text-muted)", maxWidth: "400px" }}>
-                    Securem | v2.4.2 uses end-to-end encryption. Only you and your contacts have the keys to read your messages.
+                    Securem uses end-to-end encryption. Only you and your contacts have the keys to read your messages.
                   </p>
                 </div>
               </motion.main>
