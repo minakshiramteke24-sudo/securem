@@ -1,17 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Music, Type, Image as ImageIcon, Link as LinkIcon, Shield, Send, Sparkles, ChevronLeft, Upload, FileAudio } from 'lucide-react';
+import { X, Music, ImageIcon, Link as LinkIcon, Shield, Send, Sparkles, ChevronLeft, Upload, FileAudio } from 'lucide-react';
 
 interface StoryCreatorProps {
   onClose: () => void;
-  onPost: (type: 'text' | 'image' | 'video' | 'audio', content: string, musicData?: any) => Promise<void>;
-  initialType?: 'text' | 'image' | 'video' | 'audio' | null;
+  onPost: (type: 'image' | 'video' | 'audio', content: string, musicData?: any) => Promise<void>;
+  initialType?: 'image' | 'video' | 'audio' | null;
 }
 
 const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialType = null }) => {
   const [step, setStep] = useState<'options' | 'input' | 'music-choice' | 'music-meta' | 'preview' | 'posting'>(initialType === 'audio' ? 'music-choice' : initialType ? 'input' : 'options');
-  const [storyType, setStoryType] = useState<'text' | 'image' | 'video' | 'audio' | null>(initialType);
+  const [storyType, setStoryType] = useState<'image' | 'video' | 'audio' | null>(initialType as any);
   const [content, setContent] = useState("");
   const [musicMetadata, setMusicMetadata] = useState({ title: "", artist: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,11 +107,10 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialTyp
             <h1 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Create a Story</h1>
             <p style={{ color: 'var(--text-muted)', marginBottom: '3rem', fontSize: '1.1rem' }}>Share a secure moment with your contacts</p>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem', maxWidth: '600px', margin: '0 auto' }}>
               {[
-                { type: 'text', icon: <Type size={40} />, label: 'Text', desc: 'Share your thoughts', color: '#6366f1' },
                 { type: 'media', icon: <ImageIcon size={40} />, label: 'Media', desc: 'Photos or Videos', color: '#ec4899' },
-                { type: 'audio', icon: <Music size={40} />, label: 'Music', desc: 'Share a song link', color: '#10b981' }
+                { type: 'audio', icon: <Music size={40} />, label: 'Music & Links', desc: 'Songs or YouTube Videos', color: '#10b981' }
               ].map((opt) => (
                 <motion.button
                   key={opt.type}
@@ -123,12 +122,9 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialTyp
                     } else if (opt.type === 'audio') {
                       setStoryType('audio');
                       setStep('music-choice');
-                    } else {
-                      setStoryType('text');
-                      setStep('input');
                     }
                   }}
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '32px', padding: '3rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', transition: 'all 0.3s ease' }}
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '32px', padding: '3.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', transition: 'all 0.3s ease' }}
                 >
                   <div style={{ padding: '20px', borderRadius: '24px', background: `${opt.color}20`, color: opt.color }}>{opt.icon}</div>
                   <div>
@@ -175,33 +171,21 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialTyp
              </button>
              
              <div className="glass" style={{ padding: '3rem', borderRadius: '40px', background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255,255,255,0.1)' }}>
-               <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '2rem' }}>
-                 {storyType === 'text' ? 'Write something...' : 'Song Link'}
-               </h2>
+               <h2 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '2rem' }}>Song Link</h2>
                
-               {storyType === 'text' ? (
-                 <textarea 
-                   autoFocus
-                   placeholder="What's on your mind?"
-                   value={content}
-                   onChange={(e) => setContent(e.target.value)}
-                   style={{ width: '100%', height: '200px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1.5rem', color: 'white', fontSize: '1.25rem', resize: 'none', marginBottom: '2rem', outline: 'none' }}
-                 />
-               ) : (
-                 <div style={{ marginBottom: '2rem' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1rem 1.5rem' }}>
-                     <LinkIcon size={24} color="var(--primary)" />
-                     <input 
-                       autoFocus
-                       type="text" 
-                       placeholder="Paste YouTube or Music Link"
-                       value={content}
-                       onChange={(e) => setContent(e.target.value)}
-                       style={{ background: 'transparent', border: 'none', padding: '0.5rem 0', color: 'white', width: '100%', outline: 'none', fontSize: '1.1rem' }}
-                     />
-                   </div>
+               <div style={{ marginBottom: '2rem' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '1rem 1.5rem' }}>
+                   <LinkIcon size={24} color="var(--primary)" />
+                   <input 
+                     autoFocus
+                     type="text" 
+                     placeholder="Paste YouTube or Music Link"
+                     value={content}
+                     onChange={(e) => setContent(e.target.value)}
+                     style={{ background: 'transparent', border: 'none', padding: '0.5rem 0', color: 'white', width: '100%', outline: 'none', fontSize: '1.1rem' }}
+                   />
                  </div>
-               )}
+               </div>
                
                <button 
                  onClick={() => setStep(storyType === 'audio' ? 'music-meta' : 'preview')}
@@ -283,9 +267,7 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialTyp
 
               {/* Story Content */}
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                {storyType === 'text' ? (
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.4 }}>{content}</div>
-                ) : storyType === 'image' ? (
+                {storyType === 'image' ? (
                   <img src={content} style={{ maxWidth: '100%', maxHeight: '80%', borderRadius: '15px' }} />
                 ) : storyType === 'video' ? (
                   <video src={content} autoPlay muted style={{ maxWidth: '100%', maxHeight: '80%', borderRadius: '15px' }} />

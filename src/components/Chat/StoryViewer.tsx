@@ -175,16 +175,31 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                   className="story-media-content"
                 />
               ) : currentStory.type === 'audio' ? (
-                <div className="story-audio-card">
-                  <div className="audio-visualizer-orb">
-                    <Shield size={60} color="white" />
-                  </div>
-                  <div className="audio-info">
-                    <h3>{currentStory.musicData?.title || "Secure Track"}</h3>
-                    <p>{currentStory.musicData?.artist || "Encrypted Artist"}</p>
-                  </div>
-                  <audio src={currentStory.content} autoPlay onEnded={handleNext} />
-                </div>
+                (() => {
+                  const isYoutube = currentStory.content.includes('youtube.com') || currentStory.content.includes('youtu.be');
+                  return (
+                    <div className={`story-audio-card ${isYoutube ? 'youtube' : ''}`}>
+                      <div className="audio-visualizer-orb">
+                        {isYoutube ? <div style={{ fontSize: '4rem' }}>📺</div> : <Shield size={60} color="white" />}
+                      </div>
+                      <div className="audio-info">
+                        <h3>{currentStory.musicData?.title || (isYoutube ? "YouTube Video" : "Secure Track")}</h3>
+                        <p>{currentStory.musicData?.artist || (isYoutube ? "External Link" : "Encrypted Artist")}</p>
+                      </div>
+                      <div className="audio-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                        <a 
+                          href={currentStory.content} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="btn-primary"
+                          style={{ padding: '12px 24px', borderRadius: '15px', textDecoration: 'none', background: isYoutube ? '#ff0000' : 'var(--primary)' }}
+                        >
+                          {isYoutube ? "Watch Video" : "Listen Now"}
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="story-text-content">
                   {currentStory.content}
@@ -398,6 +413,11 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
           justify-content: center;
           box-shadow: 0 20px 50px rgba(99, 102, 241, 0.4);
           animation: orb-pulse 2s infinite ease-in-out;
+        }
+
+        .story-audio-card.youtube .audio-visualizer-orb {
+          background: linear-gradient(135deg, #ff0000, #b91c1c);
+          box-shadow: 0 20px 50px rgba(239, 68, 68, 0.4);
         }
 
         @keyframes orb-pulse {
