@@ -526,7 +526,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           <button
             type="button"
             style={{ 
-              background: 'transparent', 
+              background: 'rgba(255,255,255,0.1)', 
               color: '#ffffff', 
               width: '40px', 
               height: '40px', 
@@ -534,19 +534,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: 'none',
+              border: '1px solid rgba(255,255,255,0.3)', 
               cursor: 'pointer',
-              flexShrink: 0
+              flexShrink: 0,
+              zIndex: 100
             }}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           >
-            <Smile size={24} strokeWidth={2.5} />
+            <Smile size={22} color="#ffffff" />
           </button>
 
           <button
             type="button"
             style={{ 
-              background: 'transparent', 
+              background: 'rgba(255,255,255,0.1)', 
               color: '#ffffff', 
               width: '40px', 
               height: '40px', 
@@ -554,9 +555,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: 'none',
+              border: '1px solid rgba(255,255,255,0.3)', 
               cursor: 'pointer',
-              flexShrink: 0
+              flexShrink: 0,
+              zIndex: 100
             }}
             onClick={() => {
               const input = document.createElement('input');
@@ -565,7 +567,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               input.click();
             }}
           >
-            <Paperclip size={24} strokeWidth={2.5} />
+            <Paperclip size={20} color="#ffffff" />
           </button>
 
           <AnimatePresence mode="wait">
