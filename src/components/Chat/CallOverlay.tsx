@@ -46,7 +46,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const [logs, setLogs] = useState<string[]>([]);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-  const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [connectionTime, setConnectionTime] = useState(0);
   const [remoteVolume, setRemoteVolume] = useState(0);
   const hasInitiated = useRef(false);
