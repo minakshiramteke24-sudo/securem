@@ -521,27 +521,56 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             gap: '12px'
           }}
         >
-          <motion.button
-            whileHover={{ scale: 1.1, background: 'var(--glass)' }}
-            whileTap={{ scale: 0.9 }}
-            type="button"
-            className="action-btn"
-            style={{ 
-              background: 'transparent', 
-              color: 'var(--text-muted)', 
-              width: '42px', 
-              height: '42px', 
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          >
-            <Smile size={22} />
-          </motion.button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+
+            <motion.button
+              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.05)' }}
+              whileTap={{ scale: 0.9 }}
+              type="button"
+              className="action-btn"
+              style={{ 
+                background: 'transparent', 
+                color: 'var(--text-muted)', 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile size={22} />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.05)' }}
+              whileTap={{ scale: 0.9 }}
+              type="button"
+              style={{ 
+                background: 'transparent', 
+                color: 'var(--text-muted)', 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.onchange = (e: any) => handleFileSelect(e);
+                input.click();
+              }}
+            >
+              <Paperclip size={20} />
+            </motion.button>
+          </div>
 
           <AnimatePresence mode="wait">
             {isRecording ? (
@@ -593,9 +622,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 </div>
 
                 <motion.div 
-                  animate={{ x: [-5, 5, -5] }} 
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}
                 >
                   <ArrowLeft size={14} />
                   <span>Slide to cancel</span>
@@ -626,32 +655,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             )}
           </AnimatePresence>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <motion.button
-              whileHover={{ scale: 1.1, background: 'var(--glass)' }}
-              whileTap={{ scale: 0.9 }}
-              type="button"
-              style={{ 
-                background: 'transparent', 
-                color: 'var(--text-muted)', 
-                width: '42px', 
-                height: '42px', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.onchange = (e: any) => handleFileSelect(e);
-                input.click();
-              }}
-            >
-              <Paperclip size={20} />
-            </motion.button>
+
 
             {(inputText.trim() === "" || isRecording) && (
               <motion.button 
@@ -768,7 +772,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                      backdropFilter: 'blur(4px)'
                    }}
                  >
-                   <X size={20} strokeWidth={2.5} color="white" />
+                   <X size={20} strokeWidth={3} color="white" />
                  </button>
                </div>
                
