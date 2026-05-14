@@ -37,6 +37,16 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
   }, [currentStory, user, isMine]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, stories.length]);
+
+  useEffect(() => {
     // Manual mode: No auto-timer or interval. 
     // Stories stay until user clicks next/prev.
     setProgress(100);
