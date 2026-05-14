@@ -19,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const { user, profile } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [recentChats, setRecentChats] = useState<any[]>([]);
   const [chatsLoading, setChatsLoading] = useState(true);
   const [stories, setStories] = useState<Story[]>([]);
@@ -313,24 +314,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               exit="hidden"
             >
               <p className="section-label">Global Search</p>
-              {recentChats.filter(c => c.recipient.username.toLowerCase().includes(searchTerm.toLowerCase())).map((chat) => (
+              {searchResults.map((u) => (
                 <motion.div
-                  key={chat.id}
+                  key={u.uid}
                   variants={itemVariants}
                   className="chat-item-container"
-                  onClick={() => { onSelectChat(chat.id, chat.recipient); setSearchTerm(""); }}
+                  onClick={() => { onSelectChat("", u); setSearchTerm(""); }}
                   whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
                 >
-                  <div className="avatar">
-                    {chat.recipient.avatar ? <img src={chat.recipient.avatar} alt="Avatar" /> : chat.recipient.username[0].toUpperCase()}
+                  <div className="avatar" style={{ background: u.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
+                    {u?.avatar ? <img src={u.avatar} alt="Avatar" /> : (u?.username?.[0]?.toUpperCase() || "?")}
                   </div>
                   <div className="chat-info">
-                    <p className="username">{chat.recipient.username}</p>
-                    <p className="last-message">Secure Chat</p>
+                    <p className="username">{u?.username || "Secure User"}</p>
+                    <p className="last-message" style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                      {u?.status || u?.bio || "Available"}
+                    </p>
                   </div>
                 </motion.div>
               ))}
-              {recentChats.filter(c => c.recipient.username.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="no-results">No users found</div>}
+              {searchResults.length === 0 && <div className="no-results">No users found</div>}
             </motion.div>
           ) : activeTab === 'stories' ? (
             <motion.div
