@@ -228,6 +228,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         <div className={`tab-indicator ${activeTab}`} />
       </div>
 
+      <AnimatePresence>
+        {isPostingStory && (
+          <StoryCreator 
+            onClose={() => setIsPostingStory(false)}
+            onPost={async (type, content, musicData) => {
+              if (user) {
+                await postStory(user.uid, user.displayName || "Secure User", user.photoURL || undefined, type, content, musicData);
+                setIsPostingStory(false);
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* STORY TAB CONTENT */}
       <div className="sidebar-content">
         <AnimatePresence mode="wait">
