@@ -379,10 +379,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             </div>
           )}
 
-          {status === 'connected' && (
-            <button className="force-audio-btn" onClick={forceAudioPlay}>
-               <Volume2 size={16} /> 📢 FIX AUDIO
-            </button>
+            </div>
           )}
 
           {(internalCall.callType || internalCall.type) === 'video' && localStream && (
@@ -522,30 +519,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
 
-        .force-audio-btn {
-          position: absolute;
-          bottom: 180px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--primary);
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 25px;
-          font-weight: bold;
-          font-size: 14px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-          z-index: 100;
-          animation: btn-float 2s infinite ease-in-out;
-        }
-        @keyframes btn-float {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-10px); }
-        }
         .remote-video-container {
           position: absolute;
           inset: 0;
