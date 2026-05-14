@@ -59,7 +59,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const recordingTimerRef = useRef<any>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const prevMsgCount = useRef(0);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -150,7 +150,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           fileType: file.type,
           status: 'transferring'
         });
-        await transferService.startTransfer(user.uid, recipient.uid, file, (p) => {
+        await transferService.startTransfer(user.uid, recipient.uid, file, (p: number) => {
           if (p === 100) setTimeout(() => setActiveTransfer(null), 2000);
         });
         return;
@@ -179,7 +179,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
@@ -653,7 +653,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               onClick={() => {
                 const input = document.createElement('input');
                 input.type = 'file';
-                input.onchange = (e: any) => handleFileUpload(e.target.files[0]);
+                input.onchange = (e: any) => handleFileSelect(e);
                 input.click();
               }}
             >
@@ -750,18 +750,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               exit={{ scale: 0.9, opacity: 0 }}
               className="glass profile-card" 
               onClick={e => e.stopPropagation()}
-              style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '30px', width: '90%', maxWidth: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+              style={{ background: 'var(--bg-card)', borderRadius: '24px', width: '90%', maxWidth: '360px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}
             >
-               <button 
-                 onClick={() => setShowProfile(false)}
-                 style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-               >
-                 <X size={16} color="white" />
-               </button>
-               
-               <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden' }}>
-                 {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : recipient?.username?.[0]?.toUpperCase()}
+               {/* Header Banner */}
+               <div style={{ width: '100%', height: '120px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', position: 'relative' }}>
+                 <button 
+                   onClick={() => setShowProfile(false)}
+                   style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0,0,0,0.2)', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 20, transition: 'all 0.2s' }}
+                 >
+                   <X size={18} color="white" />
+                 </button>
                </div>
+               
+               <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-card)', marginTop: '-50px', border: '4px solid var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 10 }}>
+                 {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (recipient?.username?.[0]?.toUpperCase() || "S")}
+               </div>
+               
+               <div style={{ padding: '20px 30px 30px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
                
                <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
                <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
@@ -778,6 +784,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
                  <Shield size={16} /> 
                  <span>End-to-End Encrypted</span>
+               </div>
                </div>
             </motion.div>
           </div>
