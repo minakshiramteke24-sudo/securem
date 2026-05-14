@@ -50,6 +50,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,13 +147,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
 
     setUploading(true);
+    setUploadStatus("Encrypting...");
     try {
       const { metadata, fileKey } = await prepareEncryptedFile(file);
+      setUploadStatus("Sending...");
       await sendMediaMessage(chatId, user.uid, recipient.uid, metadata, fileKey);
     } catch (err: any) {
       alert(`Transfer failed: ${err.message || "Unknown error"}`);
     } finally {
       setUploading(false);
+      setUploadStatus(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -286,14 +290,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         </AnimatePresence>
 
         <form onSubmit={handleSend} className="chat-input-container">
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button 
               type="button" 
               onClick={() => fileInputRef.current?.click()} 
               disabled={uploading}
-              style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '12px' }}
+              style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '15px', padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              {uploading ? <Loader2 size={24} className="animate-spin" /> : <Paperclip size={24} color="#a5b4fc" />}
+              {uploading ? (
+                <>
+                  <Loader2 size={24} className="animate-spin" />
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{uploadStatus}</span>
+                </>
+              ) : <Paperclip size={24} color="#a5b4fc" />}
             </button>
             <button 
               type="button" 

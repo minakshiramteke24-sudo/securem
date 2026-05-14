@@ -9,14 +9,14 @@ const AES_KEY_LENGTH = 256;
 const RSA_KEY_SIZE = 2048;
 
 /**
- * Utility to convert ArrayBuffer to Base64
+ * Utility to convert ArrayBuffer to Base64 (High Performance Chunked)
  */
 export const bufferToBase64 = (buffer: ArrayBuffer | Uint8Array): string => {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = "";
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const chunkSize = 0xffff; // 65535 bytes
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize) as any);
   }
   return btoa(binary);
 };
@@ -26,8 +26,9 @@ export const bufferToBase64 = (buffer: ArrayBuffer | Uint8Array): string => {
  */
 export const base64ToBuffer = (base64: string): ArrayBuffer => {
   const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes.buffer as ArrayBuffer;
