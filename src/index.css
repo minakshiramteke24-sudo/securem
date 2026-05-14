@@ -890,6 +890,7 @@ input:focus {
 
 .sidebar-header {
   padding: 1.5rem;
+  background: linear-gradient(180deg, var(--bg-card) 0%, transparent 100%);
   border-bottom: 1px solid var(--border);
 }
 
@@ -897,7 +898,7 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .user-profile {
@@ -1002,19 +1003,32 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   cursor: pointer;
-  border-left: 3px solid transparent;
-  transition: all 0.2s ease;
+  margin: 0.25rem 0.75rem;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .chat-item-container:hover {
   background: var(--glass);
+  transform: translateX(4px);
 }
 
 .chat-item-container.unread {
-  background: rgba(var(--primary-rgb), 0.05);
-  border-left-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.08);
+}
+
+.chat-item-container.active {
+  background: var(--primary);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.2);
+}
+
+.chat-item-container.active .username,
+.chat-item-container.active .last-message,
+.chat-item-container.active .time {
+  color: white !important;
 }
 
 .chat-item-main {

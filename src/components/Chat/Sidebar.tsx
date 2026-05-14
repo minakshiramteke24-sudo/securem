@@ -180,31 +180,41 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           </motion.div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <motion.button
-              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileHover={{ scale: 1.1, background: 'rgba(var(--primary-rgb), 0.2)' }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsPostingStory(true)}
-              style={{ background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', padding: '8px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
               title="Create Story"
             >
               <Plus size={20} />
             </motion.button>
-            <button
-              onClick={toggleProfileMenu}
+            <motion.button
+              whileHover={{ scale: 1.1, background: 'var(--border)' }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onShowSettings}
               className={`dots-btn ${profileMenuOpen ? 'active' : ''}`}
               title="Settings"
-              style={{ fontSize: '28px', fontWeight: 'bold', color: dotColor, lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'var(--glass)', color: 'var(--text-main)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--glass-border)', cursor: 'pointer' }}
             >
-              ⋮
-            </button>
+              <Settings size={20} />
+            </motion.button>
           </div>
         </div>
-        <div className="search-bar">
-          <Search size={18} className="search-icon" />
+        <div className="search-bar" style={{ position: 'relative', marginTop: '1rem' }}>
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             type="text"
             placeholder="Search users or chats..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ 
+              paddingLeft: '44px',
+              height: '42px',
+              borderRadius: '14px',
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid var(--border)',
+              fontSize: '0.9rem'
+            }}
           />
         </div>
       </motion.div>
