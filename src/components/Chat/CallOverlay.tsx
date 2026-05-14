@@ -19,7 +19,7 @@ import { rtdb } from "../../services/firebase";
 import { endCall } from "../../services/chatService";
 import { callManager, type CallSession } from "../../services/callManager";
 
-// v2.4.2 BUILD 1755
+// v2.4.4 BUILD 1757
 
 interface CallOverlayProps {
   call: CallSession & { 
@@ -122,10 +122,13 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     const callRef = ref(rtdb, path);
     onValue(callRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;
+      if (!data) {
+        // If data is null, it means the other side removed the call node.
+        handleEnd('Signal Terminated');
+        return;
+      }
       setInternalCall(prev => ({ ...prev, ...data }));
       if (data.status === 'ended') handleEnd('Remote ended');
-      // No database sync for connected status to avoid race conditions
     });
     return () => off(callRef);
   }, [user, call.recipientId, call.callerId, handleEnd]);
@@ -384,8 +387,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v243">
-             <span>v2.4.3</span>
+          <div className="call-badge version-v244">
+             <span>v2.4.4</span>
           </div>
         </div>
 
@@ -440,7 +443,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.4.3)</span>
+                <span>SIGNALING LOGS (v2.4.4)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
