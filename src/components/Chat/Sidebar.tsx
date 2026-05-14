@@ -103,16 +103,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
     setChatMenuConfig({ x: e.clientX, y: e.clientY, chatId, recipientName });
   };
 
-  const formatTime = (ts: any) => {
-    if (!ts) return "";
-    const date = new Date(ts);
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
-
   const handleStartCall = async (chatId: string, recipient: UserProfile, type: 'audio' | 'video') => {
     if (!user) return;
     try {
@@ -247,25 +237,40 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                 )}
              </AnimatePresence>
 
-             {stories.map((story, idx) => (
-               <motion.div
-                 key={story.id}
-                 className="story-item"
-                 initial={{ opacity: 0, scale: 0.8 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 whileHover={{ scale: 1.05 }}
-                 whileTap={{ scale: 0.95 }}
-                 onClick={() => setActiveStoryIndex(idx)}
-               >
-                 <div className="story-ring active">
-                   <div className="avatar">
-                     {story.avatar ? <img src={story.avatar} alt={story.username} /> : story.username[0].toUpperCase()}
+             {/* GROUPED STORIES */}
+             {Object.values(stories.reduce((acc: any, s) => {
+                if (!acc[s.uid]) acc[s.uid] = [];
+                acc[s.uid].push(s);
+                return acc;
+             }, {})).map((userStories: any) => {
+               const latestStory = userStories[0];
+               const isMyGroup = latestStory.uid === user?.uid;
+               if (isMyGroup) return null; // My story is handled separately
+
+               return (
+                 <motion.div
+                   key={latestStory.uid}
+                   className="story-item"
+                   initial={{ opacity: 0, scale: 0.8 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+                   onClick={() => {
+                     // Find the index of the first story for this user in the original flat list
+                     const globalIdx = stories.findIndex(s => s.uid === latestStory.uid);
+                     setActiveStoryIndex(globalIdx);
+                   }}
+                 >
+                   <div className="story-ring active">
+                     <div className="avatar">
+                       {latestStory.avatar ? <img src={latestStory.avatar} alt={latestStory.username} /> : latestStory.username[0].toUpperCase()}
+                     </div>
                    </div>
-                 </div>
-                 <span className="story-username">{story.username}</span>
-               </motion.div>
-             ))}
-          </div>
+                   <span className="story-username">{latestStory.username}</span>
+                 </motion.div>
+               );
+             })}
+        </div>
       )}
 
       {/* CHAT LIST / SEARCH RESULTS */}
@@ -305,55 +310,47 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           ) : (
             <motion.div
               key="chats"
-              className="chat-list"
+              className="recent-chats"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
+              exit="hidden"
             >
               <p className="section-label">Recent Conversations</p>
-              {recentChats.length > 0 ? (
-                recentChats.map((chat) => (
+              {!chatsLoading ? (
+                recentChats.length > 0 ? recentChats.map((chat) => (
                   <motion.div
                     key={chat.id}
                     variants={itemVariants}
-                    className={`chat-item-container ${chat.isUnread ? 'unread' : ''}`}
+                    className={`chat-item-container ${chat.isUnread ? "unread" : ""}`}
                     onClick={() => onSelectChat(chat.id, chat.recipient)}
-                    whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
+                    onContextMenu={(e) => openChatMenu(e, chat.id, chat.recipient.username)}
+                    whileHover={{ x: 5, background: "rgba(255, 255, 255, 0.03)" }}
                   >
-                    <div className="chat-item-main">
-                      <div className="avatar-wrapper">
-                        <div className="avatar" style={{ background: chat.recipient?.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
-                          {chat.recipient?.avatar ? (
-                            <img src={chat.recipient.avatar} alt="Avatar" />
-                          ) : (
-                            chat.recipient?.username?.[0]?.toUpperCase() || "?"
-                          )}
-                        </div>
-                        {chat.isUnread && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="unread-dot" />}
+                    <div className="avatar-wrapper">
+                      <div className="avatar" style={{ background: chat.recipient.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
+                        {chat.recipient.avatar ? <img src={chat.recipient.avatar} alt="Avatar" /> : chat.recipient.username[0].toUpperCase()}
                       </div>
-                      <div className="chat-info">
-                        <p className="username">{chat.recipient?.username || "Secure User"}</p>
-                        <p className="last-message">{chat.lastMessage || "End-to-end encrypted"}</p>
-                      </div>
+                      {chat.recipient.status === 'online' && <div className="online-indicator" />}
                     </div>
-
-                    <div className="chat-meta">
-                      <span className="time">{formatTime(chat.updatedAt)}</span>
-                      <button
-                        className="dots-btn small"
-                        onClick={(e) => openChatMenu(e, chat.id, chat.recipient?.username || "")}
-                        title="Chat options"
-                        style={{ fontSize: '22px', fontWeight: 'bold', color: dotColor, lineHeight: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        ⋮
-                      </button>
+                    <div className="chat-info">
+                      <div className="chat-info-top">
+                        <p className="username">{chat.recipient.username}</p>
+                        <span className="time">{formatTime(chat.updatedAt)}</span>
+                      </div>
+                      <div className="chat-info-bottom">
+                        <p className="last-message">
+                          {chat.lastMessage || "Start a conversation"}
+                        </p>
+                        {chat.isUnread && <div className="unread-badge" />}
+                      </div>
                     </div>
                   </motion.div>
-                ))
-              ) : chatsLoading ? (
-                null
+                )) : (
+                  <div className="no-chats">No conversations yet</div>
+                )
               ) : (
-                <div className="no-chats">No conversations yet</div>
+                <div className="no-chats">Loading conversations...</div>
               )}
             </motion.div>
           )}
