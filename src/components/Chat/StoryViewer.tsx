@@ -181,7 +181,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                           <iframe
                             width="100%"
                             height="100%"
-                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&modestbranding=1`}
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=1&modestbranding=1`}
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
