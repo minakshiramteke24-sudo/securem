@@ -521,11 +521,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             gap: '12px'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-
-            <motion.button
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.05)' }}
-              whileTap={{ scale: 0.9 }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, zIndex: 10 }}>
+            <button
               type="button"
               className="action-btn"
               style={{ 
@@ -542,12 +539,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               }}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
-              <Smile size={22} />
-            </motion.button>
+              <Smile size={24} strokeWidth={2} />
+            </button>
 
-            <motion.button
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.05)' }}
-              whileTap={{ scale: 0.9 }}
+            <button
               type="button"
               style={{ 
                 background: 'transparent', 
@@ -568,8 +563,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 input.click();
               }}
             >
-              <Paperclip size={20} />
-            </motion.button>
+              <Paperclip size={24} strokeWidth={2} />
+            </button>
           </div>
 
           <AnimatePresence mode="wait">
@@ -771,7 +766,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                      backdropFilter: 'blur(4px)'
                    }}
                  >
-                   <X size={20} strokeWidth={3} color="white" />
+                   <X size={24} strokeWidth={3} color="#ffffff" />
                  </button>
                </div>
                
