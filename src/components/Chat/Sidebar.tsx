@@ -103,6 +103,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
     setChatMenuConfig({ x: e.clientX, y: e.clientY, chatId, recipientName });
   };
 
+  const formatTime = (ts: any) => {
+    if (!ts) return "";
+    const date = new Date(ts);
+    const now = new Date();
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
   const handleStartCall = async (chatId: string, recipient: UserProfile, type: 'audio' | 'video') => {
     if (!user) return;
     try {
