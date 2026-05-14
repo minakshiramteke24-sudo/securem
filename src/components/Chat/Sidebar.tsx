@@ -285,54 +285,43 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               exit={{ opacity: 0, x: -20 }}
             >
               <p className="section-label">My Status</p>
-              {(() => {
-                const myStoryIndex = stories.findIndex(s => s.uid === user?.uid);
-                const hasStory = myStoryIndex !== -1;
-                
-                return (
-                  <div 
-                    className="story-list-item mine" 
-                    onClick={() => {
-                      if (hasStory) setActiveStoryIndex(myStoryIndex);
-                      else setIsPostingStory(true);
-                    }}
-                  >
-                    <div className="avatar-wrapper">
-                      <div className={`avatar ${hasStory ? 'active-ring' : ''}`} style={!hasStory ? { border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.1)' } : {}}>
-                        {user?.photoURL ? <img src={user.photoURL} alt="" /> : user?.displayName?.[0]}
-                        <div className="add-badge" onClick={(e) => { e.stopPropagation(); setIsPostingStory(true); }}>+</div>
-                      </div>
-                    </div>
-                    <div className="story-info">
-                      <p className="username">{hasStory ? "My Story" : "Post to Story"}</p>
-                      <p className="subtitle">{hasStory ? "Tap to view or share more" : "Tap to share a moment"}</p>
-                    </div>
+              <div className="story-list-item mine" onClick={() => setIsPostingStory(true)}>
+                <div className="avatar-wrapper">
+                  <div className="avatar" style={{ border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.1)' }}>
+                    {user?.photoURL ? <img src={user.photoURL} alt="" /> : user?.displayName?.[0]}
+                    <div className="add-badge">+</div>
                   </div>
-                );
-              })()}
+                </div>
+                <div className="story-info">
+                  <p className="username">Post to Story</p>
+                  <p className="subtitle">Tap to share a moment</p>
+                </div>
+              </div>
 
               <p className="section-label">Recent Updates</p>
               {Object.values(stories.reduce((acc: any, s) => {
                 if (!acc[s.uid]) acc[s.uid] = [];
                 acc[s.uid].push(s);
                 return acc;
-              }, {})).filter((us: any) => us[0].uid !== user?.uid).map((userStories: any) => {
+              }, {})).map((userStories: any) => {
                 const latest = userStories[0];
+                const isMe = latest.uid === user?.uid;
+
                 return (
                   <div key={latest.uid} className="story-list-item" onClick={() => setActiveStoryIndex(stories.findIndex(s => s.uid === latest.uid))}>
                     <div className="avatar-wrapper">
-                      <div className="avatar active-ring">
+                      <div className={`avatar active-ring ${isMe ? 'mine-ring' : ''}`}>
                         {latest.avatar ? <img src={latest.avatar} alt="" /> : latest.username[0]}
                       </div>
                     </div>
                     <div className="story-info">
-                      <p className="username">{latest.username}</p>
-                      <p className="subtitle">{userStories.length} updates • Secure Story</p>
+                      <p className="username">{isMe ? "My Story" : latest.username}</p>
+                      <p className="subtitle">{userStories.length} updates • {isMe ? "View your status" : "Secure Story"}</p>
                     </div>
                   </div>
                 );
               })}
-              {stories.filter(s => s.uid !== user?.uid).length === 0 && <div className="no-results">No stories yet. Be the first to share!</div>}
+              {stories.length === 0 && <div className="no-results">No stories yet. Be the first to share!</div>}
             </motion.div>
           ) : (
             <motion.div
@@ -638,6 +627,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         .story-list-item .active-ring {
           padding: 2px;
           border: 2px solid var(--primary);
+        }
+
+        .story-list-item .mine-ring {
+          border-color: #3b82f6;
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .add-badge {
