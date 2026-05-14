@@ -215,7 +215,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
              <motion.div 
                className="story-item my-story"
                whileHover={{ scale: 1.05 }}
-               onClick={() => setIsPostingStory(true)}
+               onClick={() => {
+                 const myStoryIndex = stories.findIndex(s => s.uid === user?.uid);
+                 if (myStoryIndex !== -1) {
+                   setActiveStoryIndex(myStoryIndex);
+                 } else {
+                   setIsPostingStory(true);
+                 }
+               }}
              >
                <div className="story-ring mine">
                  <div className="avatar">

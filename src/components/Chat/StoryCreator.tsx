@@ -65,7 +65,13 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ onClose, onPost, initialTyp
       backdropFilter: 'blur(20px)',
       padding: '20px'
     }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }} />
+      <div style={{ 
+        position: 'absolute', 
+        inset: 0, 
+        opacity: 0.1, 
+        backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")',
+        pointerEvents: 'none' 
+      }} />
       
       <button 
         onClick={onClose} 
