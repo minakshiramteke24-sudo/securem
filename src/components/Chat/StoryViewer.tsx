@@ -22,7 +22,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
   const [showViews, setShowViews] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSendingReply, setIsSendingReply] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
 
   const currentStory = stories[currentIndex];
   const isMine = user?.uid === currentStory?.uid;
@@ -135,10 +134,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
         {/* Main Content Area */}
         <div 
           className="story-content-main"
-          onMouseDown={() => setIsPaused(true)}
-          onMouseUp={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -251,8 +246,6 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                   placeholder="Send a reply..." 
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  onFocus={() => setIsPaused(true)}
-                  onBlur={() => setIsPaused(false)}
                 />
                 <button type="submit" disabled={!replyText.trim() || isSendingReply}>
                   <Send size={18} />
