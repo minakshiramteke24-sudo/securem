@@ -1616,3 +1616,9 @@ input:focus {
 [data-theme="light"] .header-actions button:hover {
   background: rgba(0, 0, 0, 0.06) !important;
 }
+
+/* --- ICON SVG REFINEMENTS (v2.4.4) --- */
+[data-theme="light"] .header-actions button svg {
+  stroke: #0f172a !important;
+  color: #0f172a !important;
+}
