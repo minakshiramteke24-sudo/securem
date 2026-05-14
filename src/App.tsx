@@ -92,7 +92,6 @@ const App: React.FC = () => {
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [activeCall, setActiveCall] = useState<any>(null);
-  const [initialTheme, setInitialTheme] = useState<string>("dark");
 
   // Instant theme detection before anything else
   useEffect(() => {
