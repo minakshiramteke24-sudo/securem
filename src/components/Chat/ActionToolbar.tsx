@@ -11,6 +11,7 @@ interface ActionToolbarProps {
   canEdit: boolean;
   canDeleteForEveryone: boolean;
   onReply?: () => void;
+  onReact?: (emoji: string) => void;
 }
 
 const ActionToolbar: React.FC<ActionToolbarProps> = ({
@@ -22,7 +23,8 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
   onCopy,
   canEdit,
   canDeleteForEveryone,
-  onReply
+  onReply,
+  onReact
 }) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -57,6 +59,15 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
       </div>
       
       <div className="toolbar-actions" style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
+        {selectedCount === 1 && onReact && (
+          <div style={{ display: 'flex', gap: '8px', marginRight: '8px', borderRight: '1px solid var(--border)', paddingRight: '16px' }}>
+            <button onClick={() => { onReact('👍'); onClose(); }} style={{ background: "transparent", fontSize: "20px", border: "none", cursor: "pointer" }} title="Thumbs up">👍</button>
+            <button onClick={() => { onReact('❤️'); onClose(); }} style={{ background: "transparent", fontSize: "20px", border: "none", cursor: "pointer" }} title="Heart">❤️</button>
+            <button onClick={() => { onReact('😂'); onClose(); }} style={{ background: "transparent", fontSize: "20px", border: "none", cursor: "pointer" }} title="Laugh">😂</button>
+            <button onClick={() => { onReact('🔥'); onClose(); }} style={{ background: "transparent", fontSize: "20px", border: "none", cursor: "pointer" }} title="Fire">🔥</button>
+          </div>
+        )}
+        
         {canEdit && selectedCount === 1 && (
           <button onClick={onEdit} title="Edit" style={{ background: "transparent", color: "var(--text-main)" }}>
             <Edit2 size={20} />

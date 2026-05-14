@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Loader2, Smile
+  Shield, Loader2, Smile, X, Mic
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -55,6 +55,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const recordingTimerRef = useRef<any>(null);
 
   useEffect(() => {
     const initChat = async () => {
@@ -161,6 +166,61 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("Microphone access is required to send voice notes.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      clearInterval(recordingTimerRef.current);
+      setIsRecording(false);
+      
+      mediaRecorderRef.current.onstop = async () => {
+        if (audioChunksRef.current.length === 0 || recordingDuration < 1) return;
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], `VoiceNote_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        setUploading(true);
+        setUploadStatus("Encrypting Voice Note...");
+        try {
+          if (!chatId || !user || !signingPrivateKey) throw new Error("Missing credentials");
+          const { metadata, fileKey } = await prepareEncryptedFile(file);
+          setUploadStatus("Sending...");
+          await sendMediaMessage(chatId, user.uid, recipient.uid, metadata, fileKey);
+        } catch (err: any) {
+          alert(`Voice Note failed: ${err.message || "Unknown error"}`);
+        } finally {
+          setUploading(false);
+          setUploadStatus(null);
+        }
+      };
+    }
+  };
+
   const handleSelectMessage = (id: string, _multi: boolean, _text?: string) => {
     // Selection logic
     setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]);
@@ -216,6 +276,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                     setSelectedMessageIds([]);
                   }
                 }}
+                onReact={(emoji) => {
+                  if (!chatId || !user) return;
+                  const msgId = selectedMessageIds[0];
+                  if (msgId) {
+                    toggleReaction(chatId, msgId, user.uid, emoji);
+                  }
+                }}
               />
             </motion.div>
           ) : (
@@ -258,17 +325,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       </div>
 
       <div className="messages-area">
-        {messages.map((msg) => (
-          <MessageBubble 
-            key={msg.id} 
-            message={msg} 
-            senderProfile={msg.senderId === user?.uid ? profile : recipient}
-            isSelected={selectedMessageIds.includes(msg.id)}
-            onSelect={handleSelectMessage}
-            onReaction={(emoji) => toggleReaction(chatId!, msg.id, user!.uid, emoji)}
-            onOpenMedia={(url) => setLightboxUrl(url)}
-          />
-        ))}
+        {messages.map((msg) => {
+          const repliedMsgData = msg.replyTo ? messages.find(m => m.id === msg.replyTo) : null;
+          const repliedMessage = repliedMsgData ? {
+            sender: repliedMsgData.senderId === user?.uid ? "You" : (recipient?.username || "Secure User"),
+            text: repliedMsgData.text || "Media file"
+          } : null;
+
+          return (
+            <MessageBubble 
+              key={msg.id} 
+              message={msg} 
+              senderProfile={msg.senderId === user?.uid ? profile : recipient}
+              isSelected={selectedMessageIds.includes(msg.id)}
+              onSelect={handleSelectMessage}
+              onReaction={(emoji) => toggleReaction(chatId!, msg.id, user!.uid, emoji)}
+              onOpenMedia={(url) => setLightboxUrl(url)}
+              repliedMessage={repliedMessage}
+            />
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
@@ -285,6 +361,43 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 setInputText(prev => prev + emoji);
                 inputRef.current?.focus();
               }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {replyingTo && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="reply-banner"
+              style={{
+                background: 'var(--bg-card)',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                marginBottom: '8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderLeft: '4px solid var(--primary)'
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+                  Replying to message
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)', opacity: 0.8 }} className="truncate">
+                  {replyingTo.text ? (replyingTo.text.length > 50 ? replyingTo.text.substring(0, 50) + '...' : replyingTo.text) : 'Media file'}
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setReplyingTo(null)}
+                style={{ background: 'transparent', color: 'var(--text-muted)' }}
+              >
+                <X size={16} />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -321,10 +434,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             value={inputText} 
             onChange={(e) => setInputText(e.target.value)} 
             onFocus={() => setShowEmojiPicker(false)}
+            disabled={isRecording}
           />
-          <button type="submit" className="send-btn" style={{ background: '#6366f1', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Send size={22} />
-          </button>
+          
+          {inputText.trim() === "" && !isRecording ? (
+            <button 
+              type="button" 
+              className="send-btn" 
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              onMouseLeave={stopRecording}
+              onTouchStart={startRecording}
+              onTouchEnd={stopRecording}
+              style={{ background: '#ec4899', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Mic size={22} />
+            </button>
+          ) : isRecording ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 10px' }}>
+              <motion.div 
+                animate={{ scale: [1, 1.2, 1] }} 
+                transition={{ repeat: Infinity, duration: 1 }}
+                style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }}
+              />
+              <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+          ) : (
+            <button type="submit" className="send-btn" style={{ background: '#6366f1', color: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Send size={22} />
+            </button>
+          )}
         </form>
       </div>
 

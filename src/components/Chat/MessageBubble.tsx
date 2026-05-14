@@ -307,7 +307,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>Decrypting Secure Data...</span>
                   </div>
                 ) : mediaUrl ? (
-                  message.media.type.startsWith('image/') ? (
+                  message.media.type.startsWith('audio/') ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px", borderRadius: "12px", background: "rgba(255,255,255,0.05)", minWidth: "200px" }}>
+                      <audio controls src={mediaUrl} style={{ height: "30px", width: "100%", outline: "none" }} onClick={e => e.stopPropagation()} />
+                    </div>
+                  ) : message.media.type.startsWith('image/') ? (
                     <div style={{ position: 'relative' }}>
                       <motion.img 
                         initial={{ opacity: 0 }}

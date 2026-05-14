@@ -45,6 +45,33 @@ class CallManager {
     return stream;
   }
 
+  async shareScreen(): Promise<MediaStream> {
+    if (!this.pc) throw new Error("PC not initialized");
+    
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const screenTrack = screenStream.getVideoTracks()[0];
+    
+    const sender = this.pc.getSenders().find(s => s.track?.kind === 'video');
+    if (sender) {
+      await sender.replaceTrack(screenTrack);
+    } else {
+      this.pc.addTrack(screenTrack, screenStream);
+    }
+    
+    return screenStream;
+  }
+  
+  async stopScreenShare(originalVideoStream: MediaStream) {
+    if (!this.pc) return;
+    const videoTrack = originalVideoStream.getVideoTracks()[0];
+    if (videoTrack) {
+      const sender = this.pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) {
+        await sender.replaceTrack(videoTrack);
+      }
+    }
+  }
+
   async createPeerConnection(localStream: MediaStream, onRemoteStream: (stream: MediaStream) => void, onStateChange: (state: string) => void): Promise<RTCPeerConnection> {
     console.log("[CallManager] Creating RTCPeerConnection");
     this.pc = new RTCPeerConnection(ICE_SERVERS);

@@ -8,7 +8,8 @@ import {
   Loader,
   Activity,
   Lock,
-  VolumeX
+  VolumeX,
+  MonitorUp
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -42,6 +43,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isSpeakerOff, setIsSpeakerOff] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isSharingScreen, setIsSharingScreen] = useState(false);
   const [connectionTime, setConnectionTime] = useState(0);
   const [remoteVolume, setRemoteVolume] = useState(0);
   const hasInitiated = useRef(false);
@@ -292,9 +294,36 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
   const toggleVideo = () => {
     if (localStream) {
-      const newState = !isVideoOff;
-      localStream.getVideoTracks().forEach(t => { t.enabled = !newState; });
-      setIsVideoOff(newState);
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsVideoOff(!isVideoOff);
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    try {
+      if (!isSharingScreen) {
+        const screenStream = await callManager.shareScreen();
+        if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
+        setIsSharingScreen(true);
+        
+        screenStream.getVideoTracks()[0].onended = () => {
+          if (localStream) {
+            callManager.stopScreenShare(localStream);
+            if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+          }
+          setIsSharingScreen(false);
+        };
+      } else {
+        if (localStream) {
+          await callManager.stopScreenShare(localStream);
+          if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+        }
+        setIsSharingScreen(false);
+      }
+    } catch (err) {
+      console.error("Screen sharing failed:", err);
     }
   };
 
@@ -436,6 +465,16 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                   >
                     {isVideoOff ? <MicOff size={28} /> : <Phone size={28} />}
                     <span className="btn-label">{isVideoOff ? 'CAM OFF' : 'CAM ON'}</span>
+                  </button>
+                )}
+
+                {(internalCall.callType || internalCall.type) === 'video' && (
+                  <button 
+                    onClick={toggleScreenShare} 
+                    className={`call-btn large ${isSharingScreen ? 'active' : ''}`} 
+                  >
+                    <MonitorUp size={28} />
+                    <span className="btn-label">{isSharingScreen ? 'STOP SHARE' : 'SHARE'}</span>
                   </button>
                 )}
 
