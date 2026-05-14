@@ -181,7 +181,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                           <iframe
                             width="100%"
                             height="100%"
-                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&modestbranding=1`}
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1&modestbranding=1`}
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -463,6 +463,8 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
           overflow: hidden;
           box-shadow: 0 20px 50px rgba(0,0,0,0.5);
           border: 1px solid rgba(255,255,255,0.1);
+          z-index: 10;
+          pointer-events: auto;
         }
 
         @keyframes orb-pulse {
@@ -481,8 +483,8 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
         }
 
         .story-nav-zone { position: absolute; top: 0; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: center; }
-        .story-nav-zone.left { left: 0; width: 20%; cursor: pointer; }
-        .story-nav-zone.right { right: 0; width: 80%; cursor: pointer; }
+        .story-nav-zone.left { left: 0; width: 15%; cursor: pointer; }
+        .story-nav-zone.right { right: 0; width: 15%; cursor: pointer; }
 
         .story-nav-btn {
           background: rgba(255,255,255,0.1);
