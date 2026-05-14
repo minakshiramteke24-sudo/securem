@@ -366,7 +366,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                   <div className="no-chats">No conversations yet</div>
                 )
               ) : (
-                <div className="no-chats">Loading conversations...</div>
+                <div className="skeleton-container">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="skeleton-chat-item">
+                      <div className="skeleton-avatar" />
+                      <div className="skeleton-info">
+                        <div className="skeleton-line short" />
+                        <div className="skeleton-line long" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </motion.div>
           )}
@@ -652,6 +662,67 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         .story-info { display: flex; flex-direction: column; gap: 2px; }
         .story-info .username { font-weight: 700; font-size: 0.95rem; margin: 0; }
         .story-info .subtitle { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+
+        /* SKELETON LOADING */
+        .skeleton-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          padding: 0 1rem;
+        }
+
+        .skeleton-chat-item {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 12px;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.02);
+          overflow: hidden;
+          position: relative;
+        }
+
+        .skeleton-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 16px;
+          background: rgba(255,255,255,0.05);
+        }
+
+        .skeleton-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .skeleton-line {
+          height: 12px;
+          border-radius: 6px;
+          background: rgba(255,255,255,0.05);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.long { width: 80%; }
+
+        .skeleton-chat-item::after,
+        .skeleton-line::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+          animation: skeleton-shimmer 1.5s infinite linear;
+        }
+
+        @keyframes skeleton-shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
       `}</style>
     </aside>
   );
