@@ -518,57 +518,59 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             padding: '8px 12px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
             border: '1px solid var(--glass-border)',
-            gap: '12px'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, zIndex: 10 }}>
-            <button
-              type="button"
-              className="action-btn"
-              style={{ 
-                background: 'transparent', 
-                color: 'var(--text-muted)', 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              <Smile size={24} strokeWidth={2} />
-            </button>
+          <button
+            type="button"
+            style={{ 
+              background: 'transparent', 
+              color: '#ffffff', 
+              width: '40px', 
+              height: '40px', 
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          >
+            <Smile size={24} strokeWidth={2.5} />
+          </button>
 
-            <button
-              type="button"
-              style={{ 
-                background: 'transparent', 
-                color: 'var(--text-muted)', 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.onchange = (e: any) => handleFileSelect(e);
-                input.click();
-              }}
-            >
-              <Paperclip size={24} strokeWidth={2} />
-            </button>
-          </div>
+          <button
+            type="button"
+            style={{ 
+              background: 'transparent', 
+              color: '#ffffff', 
+              width: '40px', 
+              height: '40px', 
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0
+            }}
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.onchange = (e: any) => handleFileSelect(e);
+              input.click();
+            }}
+          >
+            <Paperclip size={24} strokeWidth={2.5} />
+          </button>
 
           <AnimatePresence mode="wait">
             {isRecording ? (
+
               <motion.div 
                 key="recording-ui"
                 initial={{ opacity: 0, x: 20 }}
