@@ -647,30 +647,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             >
                <button 
                  onClick={() => setShowProfile(false)}
-                 style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                 style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
                >
-                 <X size={16} color="white" />
+                 <X size={18} strokeWidth={2.5} color="#ffffff" />
                </button>
                
-               <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden' }}>
-                 {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : recipient?.username?.[0]?.toUpperCase()}
+               {/* Cover Photo Area */}
+               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(135deg, var(--primary), #818cf8)', opacity: 0.8, borderTopLeftRadius: '24px', borderTopRightRadius: '24px' }} />
+               
+               <div style={{ position: 'relative', width: '110px', height: '110px', borderRadius: '50%', background: 'var(--bg-card)', padding: '6px', marginTop: '40px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
+                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden' }}>
+                   {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : recipient?.username?.[0]?.toUpperCase()}
+                 </div>
                </div>
                
-               <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
-               <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
-                 {recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online"}
-               </p>
+               <h2 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1.6rem', fontWeight: 700, letterSpacing: '-0.5px' }}>{recipient.username}</h2>
                
-               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '15px', width: '100%', marginBottom: '20px' }}>
-                 <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Bio</h4>
-                 <p style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center' }}>
-                   {recipient?.bio || (recipient?.status && recipient.status !== 'online' && recipient.status !== 'offline' ? recipient.status : "No bio available.")}
+               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '24px' }}>
+                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)' }} />
+                 <span style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 600 }}>Online</span>
+               </div>
+               
+               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px', width: '100%', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                 <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>About</span>
+                 <p style={{ margin: 0, color: 'rgba(255,255,255,0.9)', fontSize: '1rem', lineHeight: 1.6, textAlign: 'left', wordBreak: 'break-word' }}>
+                   {recipient?.bio || (recipient?.status && recipient.status !== 'online' && recipient.status !== 'offline' ? recipient.status : "Hey there! I am using Securem.")}
                  </p>
                </div>
                
-               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
-                 <Shield size={16} /> 
-                 <span>End-to-End Encrypted</span>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, background: 'rgba(255,255,255,0.02)', padding: '10px 16px', borderRadius: '100px' }}>
+                 <ShieldCheck size={16} color="#10b981" /> 
+                 <span>Verified End-to-End Encrypted</span>
                </div>
             </motion.div>
           </div>
