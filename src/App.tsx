@@ -23,7 +23,12 @@ const LoadingSkeleton = () => (
     animate={{ opacity: 1 }}
     exit={{ opacity: 0, scale: 1.05 }}
     className="auth-container"
-    style={{ position: 'fixed', inset: 0, zIndex: 5000 }}
+    style={{ 
+      position: 'fixed', 
+      inset: 0, 
+      zIndex: 5000,
+      background: document.documentElement.getAttribute('data-theme') === 'light' ? '#f8fafc' : undefined 
+    }}
   >
     <motion.div 
       initial={{ scale: 0.9, opacity: 0 }}
@@ -87,9 +92,18 @@ const App: React.FC = () => {
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [activeCall, setActiveCall] = useState<any>(null);
+  const [initialTheme, setInitialTheme] = useState<string>("dark");
+
+  // Instant theme detection before anything else
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('securem_theme') || "dark";
+    setInitialTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
 
   useEffect(() => {
     if (settings.appearance.theme) {
+      localStorage.setItem('securem_theme', settings.appearance.theme);
       document.documentElement.setAttribute('data-theme', settings.appearance.theme);
     }
     document.documentElement.setAttribute('data-glass', settings.appearance.glassmorphism.toString());
