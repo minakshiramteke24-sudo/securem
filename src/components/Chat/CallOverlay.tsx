@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { ref, onValue, off, get, set } from "firebase/database";
+import { ref, onValue, off, get, update } from "firebase/database";
 import { rtdb } from "../../services/firebase";
 import { endCall } from "../../services/chatService";
 import { callManager, type CallSession } from "../../services/callManager";
@@ -52,11 +52,23 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef(status);
   const shouldEndCall = useRef(true);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const addLog = useCallback((msg: string) => {
     setLogs(prev => [ `${new Date().toLocaleTimeString()}: ${msg}`, ...prev.slice(0, 30)]);
   }, []);
+
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
 
   const forceAudioPlay = () => {
     addLog("Forcing audio playback...");
@@ -175,19 +187,18 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         
         const path = `calls/${call.recipientId}/${call.callerId}`;
         const sendOffer = async () => {
-          const sanitizedCall = JSON.parse(JSON.stringify({
-            ...internalCall,
+          const updates: any = {
             offer: { type: offer.type, sdp: offer.sdp },
             status: 'calling',
             callType: callType,
-            answer: null
-          }));
-          await set(ref(rtdb, path), sanitizedCall);
+            timestamp: Date.now()
+          };
+          await update(ref(rtdb, path), updates);
         };
 
         await sendOffer();
         const persistenceTimer = setInterval(async () => {
-          if ((status as string) === 'connected') {
+          if ((statusRef.current as string) === 'connected') {
             clearInterval(persistenceTimer);
             return;
           }
@@ -196,7 +207,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             addLog("Signal lost! Restoring...");
             await sendOffer();
           }
-        }, 3000);
+        }, 5000);
 
         callManager.listenForCandidates(call.recipientId, call.callerId, 'recipient');
       } catch (err: any) {
@@ -212,12 +223,30 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       addLog("Answer found! Finalizing...");
       callManager.setRemoteDescription(internalCall.answer);
     }
-  }, [internalCall.answer, isIncoming, status, addLog]);
+
+    if (!isIncoming && status === 'connecting') {
+      const watchdog = setTimeout(() => {
+        if (statusRef.current !== 'connected') {
+          addLog("Connection slow. Self-healing...");
+          manualSync();
+        }
+      }, 15000);
+      return () => clearTimeout(watchdog);
+    }
+  }, [internalCall.answer, isIncoming, status, addLog, manualSync]);
 
   const handleAccept = useCallback(async () => {
     if (isAccepting) return;
     setIsAccepting(true);
     addLog("Accepting...");
+
+    const acceptTimeout = setTimeout(() => {
+      if (statusRef.current !== 'connected') {
+        addLog("Accept timeout. Resetting...");
+        setIsAccepting(false);
+        setStatus('incoming');
+      }
+    }, 20000);
 
     let currentOffer = internalCall.offer;
     if (!currentOffer) {
@@ -228,6 +257,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     if (!currentOffer) {
       addLog("Wait for caller...");
       setIsAccepting(false);
+      clearTimeout(acceptTimeout);
       return;
     }
 
@@ -246,14 +276,16 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           addLog("Stream OK!");
           setRemoteStream(remote); 
           setStatus('connected'); 
-          setIsAccepting(false); // Force accepting off
+          setIsAccepting(false);
+          clearTimeout(acceptTimeout);
           startVolumeMonitor(remote);
         },
         (state) => { 
           addLog(`PC: ${state}`);
           if (state === 'connected') {
             setStatus('connected');
-            setIsAccepting(false); // Force accepting off
+            setIsAccepting(false);
+            clearTimeout(acceptTimeout);
           }
         }
       );
@@ -267,16 +299,16 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const answer = await callManager.createAnswer(callType);
       
       const path = `calls/${call.recipientId}/${call.callerId}`;
-      const sanitizedAnswer = JSON.parse(JSON.stringify({ 
-        ...internalCall,
-        answer: { type: answer.type, sdp: answer.sdp }, 
-        status: 'connected' 
-      }));
+      const updates: any = {
+        answer: { type: answer.type, sdp: answer.sdp },
+        status: 'connected'
+      };
 
-      await set(ref(rtdb, path), sanitizedAnswer);
+      await update(ref(rtdb, path), updates);
     } catch (e: any) {
       addLog(`Fail: ${e.message}`);
       setIsAccepting(false);
+      clearTimeout(acceptTimeout);
       handleEnd('Error');
     }
   }, [internalCall, call.recipientId, call.callerId, isAccepting, handleEnd, manualSync, addLog]);
@@ -334,8 +366,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v230">
-             <span>v2.3.0</span>
+          <div className="call-badge version-v240">
+             <span>v2.4.0</span>
           </div>
         </div>
 
@@ -389,7 +421,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.3.0)</span>
+                <span>SIGNALING LOGS (v2.4.0)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
@@ -397,6 +429,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
               </div>
               <div className="console-body" style={{ maxHeight: '150px', overflowY: 'auto', padding: '10px' }}>
                 {logs.map((log, i) => <div key={i} className="log-line">{log}</div>)}
+                <div ref={logsEndRef} />
               </div>
             </div>
           )}
@@ -411,7 +444,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
               <PhoneOff size={32} />
             </button>
             <button onClick={() => setIsSpeakerOff(!isSpeakerOff)} className={`call-btn ${isSpeakerOff ? 'active' : ''}`}>
-              {isSpeakerOff ? <VolumeX /> : <Volume2 />}
+              <VolumeX />
             </button>
           </div>
 

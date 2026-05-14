@@ -2,8 +2,9 @@ import React, { useState, useEffect, Suspense, lazy } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./context/AuthContext";
 import { useCrypto } from "./context/CryptoContext";
-import { type UserProfile, getUserProfile } from "./services/userService";
-import { auth } from "./services/firebase";
+import { type UserProfile } from "./services/userService";
+import { auth, rtdb } from "./services/firebase";
+import { ref, get, remove } from "firebase/database";
 import { ShieldAlert, Lock } from "lucide-react";
 import { PrivacyPolicy, TermsOfService, AboutSecurem } from "./components/Pages/Legal";
 import { listenForCalls, startCall } from "./services/chatService";
@@ -16,9 +17,6 @@ import ChatWindow from "./components/Chat/ChatWindow";
 const CallOverlay = lazy(() => import("./components/Chat/CallOverlay"));
 const SettingsPage = lazy(() => import("./components/Chat/SettingsPage"));
 
-/**
- * Modern Animated Splash Screen for premium first impression
- */
 const LoadingSkeleton = () => (
   <motion.div 
     initial={{ opacity: 0 }}
@@ -71,16 +69,6 @@ const LoadingSkeleton = () => (
         >
           Preparing secure environment
         </motion.div>
-        <div style={{ display: "flex", gap: "4px", justifyContent: "center", marginTop: "1rem" }}>
-          {[0, 1, 2].map(i => (
-            <motion.div
-              key={i}
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-              style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--primary)" }}
-            />
-          ))}
-        </div>
       </div>
     </motion.div>
   </motion.div>
@@ -90,10 +78,6 @@ const App: React.FC = () => {
   const { user, profile, settings, loading: authLoading } = useAuth();
   const { isUnlocked, unlock } = useCrypto();
   
-  useEffect(() => {
-    console.log("%c        SECUREM v2.3.0 • Build 1752", "background: #6366f1; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
-  }, []);
-
   const [isLogin, setIsLogin] = useState(true);
   const [view, setView] = useState<"app" | "privacy" | "terms" | "about" | "settings">("app");
   const [selectedRecipient, setSelectedRecipient] = useState<UserProfile | null>(null);
@@ -101,6 +85,10 @@ const App: React.FC = () => {
   const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [activeCall, setActiveCall] = useState<any>(null);
+
+  useEffect(() => {
+    console.log("%c        SECUREM v2.4.0 • Build 1753", "background: #6366f1; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
+  }, []);
 
   useEffect(() => {
     if (settings.appearance.theme) {
@@ -112,7 +100,6 @@ const App: React.FC = () => {
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[App] Unlock requested...");
     setUnlocking(true);
     setUnlockError("");
     try {
@@ -121,81 +108,59 @@ const App: React.FC = () => {
         sign: profile.encryptedSigningKey || "",
         salt: profile.keySalt || ""
       } : undefined;
-
-      console.log("[App] Calling crypto.unlock with backup:", !!backup);
       await unlock(unlockPassword, backup);
-      console.log("[App] crypto.unlock completed successfully.");
     } catch (err: any) {
-      console.error("[App] Unlock failed:", err);
       setUnlockError(err.message);
     } finally {
-      console.log("[App] Unlock process finished.");
       setUnlocking(false);
     }
   };
 
   useEffect(() => {
     let unsubscribe: () => void;
-    if (user && isUnlocked) {
-      unsubscribe = listenForCalls(user.uid, async (call) => {
-        if (call) {
-          const isIncoming = call.callerId !== user.uid;
-          let finalCall = { 
-            ...call, 
-            isIncoming,
-            type: call.callType || call.type || 'audio', 
-            // Remote user info (the person on the other end)
-            remoteUsername: "Secure User",
-            remoteAvatar: null as string | null
-          };
-
-          if (isIncoming) {
-            finalCall.remoteUsername = call.callerUsername || "Secure User";
-            finalCall.remoteAvatar = call.callerAvatar || null;
-          } else {
-            finalCall.remoteUsername = call.recipientUsername || "Secure User";
-            finalCall.remoteAvatar = call.recipientAvatar || null;
-          }
-          
-          console.log(`[App] 📞 Signaling Sync. ID: ${call.id}, Remote: ${finalCall.remoteUsername}`);
-
-          if (isIncoming && !call.callerUsername) {
-            try {
-              console.log(`[App] Fallback: Fetching profile for caller: ${call.callerId}`);
-              const callerProfile = await getUserProfile(call.callerId);
-              if (callerProfile) {
-                finalCall.remoteUsername = callerProfile.username;
-                finalCall.remoteAvatar = callerProfile.avatar;
+    const initializeSignaling = async () => {
+      if (user && isUnlocked) {
+        // Clean slate on mount
+        const callsRef = ref(rtdb, `calls/${user.uid}`);
+        try {
+          const snapshot = await get(callsRef);
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            const now = Date.now();
+            for (const callerId in data) {
+              const callData = data[callerId];
+              const callTime = callData.timestamp || 0;
+              if (callData.status === 'ended' || (now - callTime > 120000)) {
+                await remove(ref(rtdb, `calls/${user.uid}/${callerId}`));
               }
-            } catch (err) {
-              console.error("[App] Failed to fetch caller profile:", err);
             }
           }
-          
-          console.log(`[App] 📞 Call State: ${finalCall.type}, Incoming: ${isIncoming}, Remote: ${finalCall.remoteUsername}`);
-          
-          setActiveCall((prev: any) => {
-            // Priority 1: Keep current outgoing call if we are the caller
-            if (prev && !prev.isIncoming && isIncoming) {
-              console.log("[App] Incoming call ignored; Outgoing call has priority.");
-              return prev;
-            }
-            // Priority 2: Update with fresh data (incoming or manual outgoing)
-            return finalCall;
-          });
-        } else {
-          // IMPORTANT: Only clear if the current active call was an INCOMING one.
-          // If we are currently making an OUTGOING call, do not clear it.
-          setActiveCall((prev: any) => {
-            if (prev && !prev.isIncoming) {
-              console.log("[App] Incoming listener returned null, but keeping outgoing call active.");
-              return prev;
-            }
-            return null;
-          });
-        }
-      });
-    }
+        } catch (e) {}
+
+        unsubscribe = listenForCalls(user.uid, async (call) => {
+          if (call) {
+            const isIncoming = call.callerId !== user.uid;
+            let finalCall = { 
+              ...call, 
+              isIncoming,
+              type: call.callType || call.type || 'audio', 
+              remoteUsername: isIncoming ? (call.callerUsername || "Secure User") : (call.recipientUsername || "Secure User"),
+              remoteAvatar: isIncoming ? (call.callerAvatar || null) : (call.recipientAvatar || null)
+            };
+            setActiveCall((prev: any) => {
+              if (prev && !prev.isIncoming && isIncoming) return prev;
+              return finalCall;
+            });
+          } else {
+            setActiveCall((prev: any) => {
+              if (prev && !prev.isIncoming) return prev;
+              return null;
+            });
+          }
+        });
+      }
+    };
+    initializeSignaling();
     return () => unsubscribe && unsubscribe();
   }, [user, isUnlocked]);
 
@@ -283,7 +248,7 @@ const App: React.FC = () => {
       ) : (
         <div key="app" className={`app-container ${selectedRecipient ? 'has-selected-chat' : ''}`}>
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#ef4444', color: 'white', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', zIndex: 10000, padding: '4px' }}>
-            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.3.0</span> LATEST VERSION DEPLOYED: v2.3.0 - IF YOU SEE THIS, YOU ARE UPDATED.
+            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>v2.4.0</span> LATEST VERSION DEPLOYED: v2.4.0 - IF YOU SEE THIS, YOU ARE UPDATED.
           </div>
           <Sidebar 
             onSelectChat={(_, recipient) => setSelectedRecipient(recipient)} 
@@ -411,4 +376,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
