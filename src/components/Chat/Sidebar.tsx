@@ -215,19 +215,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
              <motion.div 
                className="story-item my-story"
                whileHover={{ scale: 1.05 }}
-               onClick={() => {
+             >
+               <div className="story-ring mine" onClick={() => {
                  const myStoryIndex = stories.findIndex(s => s.uid === user?.uid);
                  if (myStoryIndex !== -1) {
                    setActiveStoryIndex(myStoryIndex);
                  } else {
                    setIsPostingStory(true);
                  }
-               }}
-             >
-               <div className="story-ring mine">
+               }}>
                  <div className="avatar">
                    {user?.photoURL ? <img src={user.photoURL} alt="Me" /> : user?.displayName?.[0] || "Y"}
-                   <div className="add-icon">+</div>
+                   <div className="add-icon" onClick={(e) => { e.stopPropagation(); setIsPostingStory(true); }}>+</div>
                  </div>
                </div>
                <span className="story-username">My Story</span>
@@ -454,7 +453,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           background: rgba(255, 255, 255, 0.03);
           backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          margin-bottom: 0.5rem;
+          margin-bottom: 1rem;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .story-bar-premium::-webkit-scrollbar { display: none; }
 
