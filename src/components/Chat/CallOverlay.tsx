@@ -9,10 +9,8 @@ import {
   Activity,
   Lock,
   Terminal,
-  UserCheck,
   RefreshCw,
-  VolumeX,
-  Zap
+  VolumeX
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
