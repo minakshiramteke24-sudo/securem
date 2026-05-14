@@ -45,6 +45,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const [showConsole, setShowConsole] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [connectionTime, setConnectionTime] = useState(0);
   const [remoteVolume, setRemoteVolume] = useState(0);
   const hasInitiated = useRef(false);
@@ -320,7 +322,16 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       const newState = !isMuted;
       localStream.getAudioTracks().forEach(t => { t.enabled = !newState; });
       setIsMuted(newState);
-      addLog(newState ? "Muted" : "Unmuted");
+      addLog(newState ? "Mic Muted" : "Mic Active");
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStream) {
+      const newState = !isVideoOff;
+      localStream.getVideoTracks().forEach(t => { t.enabled = !newState; });
+      setIsVideoOff(newState);
+      addLog(newState ? "Camera Off" : "Camera On");
     }
   };
 
@@ -374,14 +385,17 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v242">
-             <span>v2.4.2</span>
+          <div className="call-badge version-v243">
+             <span>v2.4.3</span>
           </div>
         </div>
 
-        <div className="call-main">
+        <div className="call-main video-ready">
           {(internalCall.callType || internalCall.type) === 'video' && status === 'connected' && remoteStream ? (
-            <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
+            <div className="remote-video-container">
+              <video ref={remoteVideoRef} autoPlay playsInline className="remote-video-full" />
+              <div className="video-overlay-tint" />
+            </div>
           ) : (
             <div className="call-avatar-view">
               <div className="call-avatar-circle" style={{ boxShadow: `0 0 ${remoteVolume * 3}px var(--primary)` }}>
@@ -401,13 +415,6 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                    status === 'incoming' ? 'INCOMING CALL' : 
                    status === 'connecting' ? 'CONNECTING...' : 'CALLING...'}
                 </p>
-                {status === 'connected' && (
-                  <div className="mic-meter">
-                    {[1,2,3,4,5,6,7,8].map(i => (
-                      <div key={i} className="mic-bar" style={{ height: `${Math.random() * remoteVolume * 1.5}%` }} />
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -419,9 +426,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           )}
 
           {(internalCall.callType || internalCall.type) === 'video' && localStream && (
-            <div className="local-preview-card">
-              <video ref={localVideoRef} autoPlay muted playsInline className="local-video" />
-            </div>
+            <motion.div 
+              drag
+              dragConstraints={{ left: -100, right: 100, top: -200, bottom: 200 }}
+              className="local-preview-floating"
+            >
+              <video ref={localVideoRef} autoPlay muted playsInline className="local-video-mini" />
+              {isVideoOff && <div className="video-off-placeholder"><MicOff size={24} /></div>}
+            </motion.div>
           )}
         </div>
 
@@ -429,7 +441,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.4.2)</span>
+                <span>SIGNALING LOGS (v2.4.3)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
@@ -481,6 +493,14 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
                 animate={{ y: 0, opacity: 1 }}
                 className="call-btn-group"
               >
+                <button 
+                  onClick={toggleVideo} 
+                  className={`call-btn large ${isVideoOff ? 'active warning' : ''}`} 
+                >
+                  {isVideoOff ? <MicOff size={28} /> : <Phone size={28} />}
+                  <span className="btn-label">{isVideoOff ? 'CAM OFF' : 'CAM ON'}</span>
+                </button>
+
                 <button 
                   onClick={toggleMute} 
                   className={`call-btn large ${isMuted ? 'muted active' : ''}`} 
@@ -594,6 +614,52 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
         @keyframes btn-float {
           0%, 100% { transform: translateX(-50%) translateY(0); }
           50% { transform: translateX(-50%) translateY(-10px); }
+        }
+        .remote-video-container {
+          position: absolute;
+          inset: 0;
+          background: #000;
+          z-index: 0;
+        }
+        .remote-video-full {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .video-overlay-tint {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%);
+          pointer-events: none;
+        }
+        .local-preview-floating {
+          position: absolute;
+          top: 40px;
+          right: 30px;
+          width: 120px;
+          height: 180px;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          border: 2px solid rgba(255,255,255,0.2);
+          z-index: 10;
+          cursor: grab;
+          background: #1a1a1a;
+        }
+        .local-video-mini {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .video-off-placeholder {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #1a1a1a;
+          color: white;
+          opacity: 0.8;
         }
       `}</style>
     </div>
