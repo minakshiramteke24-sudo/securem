@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, User as UserIcon, Check, Phone, Video, Eraser, UserMinus, Settings, LogOut, Plus } from "lucide-react";
+import { Search, User as UserIcon, Check, Phone, Video, Eraser, UserMinus, Settings, LogOut, Plus, MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { searchUsers, type UserProfile } from "../../services/userService";
 import { subscribeToChats, deleteLocalChat, clearChatMessages } from "../../services/chatService";
@@ -19,7 +19,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const { user, profile } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [recentChats, setRecentChats] = useState<any[]>([]);
   const [chatsLoading, setChatsLoading] = useState(true);
   const [stories, setStories] = useState<Story[]>([]);
@@ -198,8 +197,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             </button>
           </div>
         </div>
-      </motion.div>
-
         <div className="search-bar">
           <Search size={18} className="search-icon" />
           <input
@@ -315,7 +312,25 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               animate="visible"
               exit="hidden"
             >
-              {/* ... same search results ... */}
+              <p className="section-label">Global Search</p>
+              {recentChats.filter(c => c.recipient.username.toLowerCase().includes(searchTerm.toLowerCase())).map((chat) => (
+                <motion.div
+                  key={chat.id}
+                  variants={itemVariants}
+                  className="chat-item-container"
+                  onClick={() => { onSelectChat(chat.id, chat.recipient); setSearchTerm(""); }}
+                  whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
+                >
+                  <div className="avatar">
+                    {chat.recipient.avatar ? <img src={chat.recipient.avatar} alt="Avatar" /> : chat.recipient.username[0].toUpperCase()}
+                  </div>
+                  <div className="chat-info">
+                    <p className="username">{chat.recipient.username}</p>
+                    <p className="last-message">Secure Chat</p>
+                  </div>
+                </motion.div>
+              ))}
+              {recentChats.filter(c => c.recipient.username.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && <div className="no-results">No users found</div>}
             </motion.div>
           ) : activeTab === 'stories' ? (
             <motion.div
