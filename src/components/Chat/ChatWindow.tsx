@@ -749,9 +749,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                <div style={{ width: '100%', height: '120px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', position: 'relative' }}>
                  <button 
                    onClick={() => setShowProfile(false)}
-                   style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0,0,0,0.2)', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 20, transition: 'all 0.2s' }}
+                   style={{ 
+                     position: 'absolute', 
+                     top: '15px', 
+                     right: '15px', 
+                     background: 'rgba(255,255,255,0.2)', 
+                     border: 'none', 
+                     color: 'white', 
+                     width: '32px', 
+                     height: '32px', 
+                     borderRadius: '50%', 
+                     display: 'flex', 
+                     alignItems: 'center', 
+                     justifyContent: 'center', 
+                     cursor: 'pointer', 
+                     zIndex: 20, 
+                     transition: 'all 0.2s',
+                     backdropFilter: 'blur(4px)'
+                   }}
                  >
-                   <X size={18} color="white" />
+                   <X size={20} strokeWidth={2.5} color="white" />
                  </button>
                </div>
                
