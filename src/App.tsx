@@ -96,7 +96,6 @@ const App: React.FC = () => {
   // Instant theme detection before anything else
   useEffect(() => {
     const savedTheme = localStorage.getItem('securem_theme') || "dark";
-    setInitialTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
