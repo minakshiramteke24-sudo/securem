@@ -655,8 +655,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             )}
           </AnimatePresence>
           
-
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {(inputText.trim() === "" || isRecording) && (
               <motion.button 
                 type="button" 
