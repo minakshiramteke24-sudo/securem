@@ -237,12 +237,14 @@ input:focus {
 .chat-window {
   display: grid;
   grid-template-rows: 70px 1fr 100px;
-  background: url("https://www.transparenttextures.com/patterns/cubes.png"), var(--bg-dark);
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 32px 32px;
   background-attachment: fixed;
 }
 
 [data-theme="light"] .chat-window {
-  background-image: url("https://www.transparenttextures.com/patterns/white-diamond-dark.png");
+  background-image: radial-gradient(circle at 2px 2px, rgba(0, 0, 0, 0.05) 1px, transparent 0);
 }
 
 /* Animations */
@@ -768,7 +770,9 @@ input:focus {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: url("https://www.transparenttextures.com/patterns/cubes.png"), #0a0a0c;
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 32px 32px;
   background-attachment: fixed;
   position: relative;
 }

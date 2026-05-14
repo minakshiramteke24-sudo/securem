@@ -139,6 +139,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
     exit: { opacity: 0, scale: 0.95, y: -10 }
   };
 
+  const filteredRecentChats = recentChats.filter(chat => 
+    chat.recipient.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (chat.lastMessage && chat.lastMessage.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <aside className="sidebar">
       {/* HEADER */}
@@ -240,8 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
       {/* STORY TAB CONTENT */}
       <div className="sidebar-content">
-        <AnimatePresence mode="wait">
-          {searchTerm.length >= 2 ? (
+          {searchTerm.length > 0 ? (
             <motion.div
               key="search"
               className="search-results"
@@ -250,27 +254,54 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               animate="visible"
               exit="hidden"
             >
-              <p className="section-label">Global Search</p>
-              {searchResults.map((u) => (
-                <motion.div
-                  key={u.uid}
-                  variants={itemVariants}
-                  className="chat-item-container"
-                  onClick={() => { onSelectChat("", u); setSearchTerm(""); }}
-                  whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
-                >
-                  <div className="avatar" style={{ background: u.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
-                    {u?.avatar ? <img src={u.avatar} alt="Avatar" /> : (u?.username?.[0]?.toUpperCase() || "?")}
-                  </div>
-                  <div className="chat-info">
-                    <p className="username">{u?.username || "Secure User"}</p>
-                    <p className="last-message" style={{ fontSize: "0.85rem", opacity: 0.7 }}>
-                      {u?.status || u?.bio || "Available"}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-              {searchResults.length === 0 && <div className="no-results">No users found</div>}
+              {filteredRecentChats.length > 0 && (
+                <>
+                  <p className="section-label">Your Conversations</p>
+                  {filteredRecentChats.map((chat) => (
+                    <motion.div
+                      key={chat.id}
+                      variants={itemVariants}
+                      className="chat-item-container"
+                      onClick={() => { onSelectChat(chat.id, chat.recipient); setSearchTerm(""); }}
+                      whileHover={{ x: 5, background: "rgba(255, 255, 255, 0.03)" }}
+                    >
+                      <div className="avatar" style={{ background: chat.recipient.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
+                        {chat.recipient.avatar ? <img src={chat.recipient.avatar} alt="Avatar" /> : chat.recipient.username[0].toUpperCase()}
+                      </div>
+                      <div className="chat-info">
+                        <p className="username">{chat.recipient.username}</p>
+                        <p className="last-message">{chat.lastMessage || "Start a conversation"}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </>
+              )}
+
+              {searchTerm.length >= 2 && (
+                <>
+                  <p className="section-label" style={{ marginTop: '1rem' }}>Global Search</p>
+                  {searchResults.filter(u => !recentChats.some(c => c.recipient.uid === u.uid)).map((u) => (
+                    <motion.div
+                      key={u.uid}
+                      variants={itemVariants}
+                      className="chat-item-container"
+                      onClick={() => { onSelectChat("", u); setSearchTerm(""); }}
+                      whileHover={{ x: 5, background: "rgba(var(--primary-rgb), 0.05)" }}
+                    >
+                      <div className="avatar" style={{ background: u.username?.toLowerCase().includes('minakshi') ? '#9333ea' : 'var(--primary)' }}>
+                        {u?.avatar ? <img src={u.avatar} alt="Avatar" /> : (u?.username?.[0]?.toUpperCase() || "?")}
+                      </div>
+                      <div className="chat-info">
+                        <p className="username">{u?.username || "Secure User"}</p>
+                        <p className="last-message" style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                          {u?.status || u?.bio || "Available"}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {searchResults.length === 0 && filteredRecentChats.length === 0 && <div className="no-results">No users or chats found</div>}
+                </>
+              )}
             </motion.div>
           ) : activeTab === 'stories' ? (
             <motion.div
