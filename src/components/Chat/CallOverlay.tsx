@@ -122,7 +122,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       if (!data) return;
       setInternalCall(prev => ({ ...prev, ...data }));
       if (data.status === 'ended') handleEnd('Remote ended');
-      if (data.status === 'connected' && status !== 'connected') setStatus('connected');
+      // REMOVED: data.status === 'connected' sync. 
+      // We must only setStatus('connected') when the REAL peer connection is ready.
     });
     return () => off(callRef);
   }, [user, call.recipientId, call.callerId, handleEnd]);
@@ -220,7 +221,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
 
   useEffect(() => {
     if (!isIncoming && internalCall.answer && status !== 'connected') {
-      addLog("Answer found! Finalizing...");
+      addLog("SIGNAL SYNC: Answer applied.");
       callManager.setRemoteDescription(internalCall.answer);
     }
 
