@@ -38,25 +38,10 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
   }, [currentStory, user, isMine]);
 
   useEffect(() => {
-    if (isPaused) return;
-    
-    setProgress(0);
-    const duration = 5000; // 5 seconds per story
-    const interval = 50;
-    const step = (interval / duration) * 100;
-
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          handleNext();
-          return 0;
-        }
-        return prev + step;
-      });
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, [currentIndex, isPaused]);
+    // Manual mode: No auto-timer or interval. 
+    // Stories stay until user clicks next/prev.
+    setProgress(100);
+  }, [currentIndex]);
 
   const handleNext = () => {
     if (currentIndex < stories.length - 1) {
