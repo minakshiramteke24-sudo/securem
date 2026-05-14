@@ -34,17 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
-  // Theme detection for explicit colors
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  useEffect(() => {
-    const checkTheme = () => {
-      setIsDarkMode(document.documentElement.getAttribute('data-theme') !== 'light');
-    };
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, { attributes: true });
-    checkTheme();
-    return () => observer.disconnect();
-  }, []);
+
 
 
 

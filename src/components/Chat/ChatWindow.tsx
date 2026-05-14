@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Smile, X, Mic, Trash2, Search, MoreVertical
+  Shield, Smile, X, Mic, Trash2, Search
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -157,16 +157,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
 
     setUploading(true);
-    setUploadStatus("Encrypting...");
     try {
       const { metadata, fileKey } = await prepareEncryptedFile(file);
-      setUploadStatus("Sending...");
       await sendMediaMessage(chatId, user.uid, recipient.uid, metadata, fileKey);
     } catch (err: any) {
       alert(`Transfer failed: ${err.message || "Unknown error"}`);
     } finally {
       setUploading(false);
-      setUploadStatus(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -211,17 +208,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         const file = new File([audioBlob], `VoiceNote_${Date.now()}.webm`, { type: 'audio/webm' });
         
         setUploading(true);
-        setUploadStatus("Encrypting Voice Note...");
         try {
           if (!chatId || !user || !signingPrivateKey) throw new Error("Missing credentials");
           const { metadata, fileKey } = await prepareEncryptedFile(file);
-          setUploadStatus("Sending...");
           await sendMediaMessage(chatId, user.uid, recipient.uid, metadata, fileKey);
         } catch (err: any) {
           alert(`Voice Note failed: ${err.message || "Unknown error"}`);
         } finally {
           setUploading(false);
-          setUploadStatus(null);
         }
       };
     }
