@@ -12,12 +12,14 @@ import {
   RefreshCw,
   VolumeX
 } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { ref, onValue, off, get, update } from "firebase/database";
 import { rtdb } from "../../services/firebase";
 import { endCall } from "../../services/chatService";
 import { callManager, type CallSession } from "../../services/callManager";
+
+// v2.4.2 BUILD 1755
 
 interface CallOverlayProps {
   call: CallSession & { 
@@ -122,8 +124,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
       if (!data) return;
       setInternalCall(prev => ({ ...prev, ...data }));
       if (data.status === 'ended') handleEnd('Remote ended');
-      // REMOVED: data.status === 'connected' sync. 
-      // We must only setStatus('connected') when the REAL peer connection is ready.
+      // No database sync for connected status to avoid race conditions
     });
     return () => off(callRef);
   }, [user, call.recipientId, call.callerId, handleEnd]);
@@ -324,6 +325,12 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   };
 
   useEffect(() => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.muted = isSpeakerOff;
+    }
+  }, [isSpeakerOff]);
+
+  useEffect(() => {
     if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
@@ -367,8 +374,8 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
             <Activity size={14} />
             <span>S: {status.toUpperCase()} | O: {internalCall.offer ? '✅' : '⌛'} | A: {internalCall.answer ? '✅' : '⌛'}</span>
           </div>
-          <div className="call-badge version-v241">
-             <span>v2.4.1</span>
+          <div className="call-badge version-v242">
+             <span>v2.4.2</span>
           </div>
         </div>
 
@@ -422,7 +429,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           {showConsole && (
             <div className="call-debug-console">
               <div className="console-header">
-                <span>SIGNALING LOGS (v2.4.1)</span>
+                <span>SIGNALING LOGS (v2.4.2)</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={manualSync} title="Force Sync"><RefreshCw size={14} /></button>
                   <button onClick={() => setShowConsole(false)}>×</button>
@@ -436,77 +443,157 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
           )}
         </AnimatePresence>
 
-        <div className="call-actions-bar">
-          <div className="call-btn-group">
-            <button onClick={toggleMute} className={`call-btn ${isMuted ? 'muted' : ''}`} title={isMuted ? "Unmute" : "Mute"}>
-              {isMuted ? <MicOff /> : <Mic />}
-            </button>
-            <button onClick={() => handleEnd()} className="call-btn danger end">
-              <PhoneOff size={32} />
-            </button>
-            <button onClick={() => setIsSpeakerOff(!isSpeakerOff)} className={`call-btn ${isSpeakerOff ? 'active' : ''}`}>
-              <VolumeX />
-            </button>
-          </div>
+        <div className="call-actions-bar enhanced-controls">
+          <AnimatePresence mode="wait">
+            {status === 'incoming' && !isAccepting ? (
+              <motion.div 
+                key="incoming-actions"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                className="call-btn-group incoming-ring"
+              >
+                <button onClick={() => handleEnd('Declined')} className="call-btn danger large ring-btn">
+                  <PhoneOff size={32} />
+                  <span className="btn-label">DECLINE</span>
+                </button>
+                <button onClick={handleAccept} className="call-btn success extra-large ring-btn pulse">
+                  <Phone size={40} />
+                  <span className="btn-label">ACCEPT</span>
+                </button>
+              </motion.div>
+            ) : isAccepting ? (
+              <motion.div 
+                key="accepting-state"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="call-btn-group"
+              >
+                <div className="call-btn extra-large connecting glass">
+                  <Loader className="animate-spin" size={40} />
+                  <span className="btn-label">CONNECTING...</span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="active-actions"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="call-btn-group"
+              >
+                <button 
+                  onClick={toggleMute} 
+                  className={`call-btn large ${isMuted ? 'muted active' : ''}`} 
+                >
+                  {isMuted ? <MicOff size={28} /> : <Mic size={28} />}
+                  <span className="btn-label">{isMuted ? 'UNMUTE' : 'MUTE'}</span>
+                </button>
+                
+                <button onClick={() => handleEnd()} className="call-btn danger end extra-large">
+                  <PhoneOff size={40} />
+                  <span className="btn-label">END</span>
+                </button>
+                
+                <button 
+                  onClick={() => setIsSpeakerOff(!isSpeakerOff)} 
+                  className={`call-btn large ${isSpeakerOff ? 'active warning' : ''}`}
+                >
+                  {isSpeakerOff ? <VolumeX size={28} /> : <Volume2 size={28} />}
+                  <span className="btn-label">SPEAKER</span>
+                </button>
 
-          <div className="call-btn-group">
-            {status === 'incoming' && !isAccepting && (
-              <button onClick={handleAccept} className="call-btn success ringing">
-                <Phone size={32} />
-              </button>
+                <button 
+                  onClick={() => setShowConsole(!showConsole)} 
+                  className={`call-btn medium console-btn ${showConsole ? 'active' : ''}`}
+                >
+                  <Terminal size={20} />
+                </button>
+              </motion.div>
             )}
-            {isAccepting && (
-              <div className="call-btn connecting">
-                <Loader className="animate-spin" />
-              </div>
-            )}
-            <button onClick={() => setShowConsole(!showConsole)} className={`call-btn ${showConsole ? 'active' : ''}`}>
-              <Terminal />
-            </button>
-          </div>
+          </AnimatePresence>
         </div>
       </div>
       
       <style>{`
+        .enhanced-controls {
+          padding-bottom: 40px;
+        }
+        .call-btn-group {
+          display: flex;
+          align-items: flex-end;
+          gap: 20px;
+          justify-content: center;
+          width: 100%;
+        }
+        .call-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border-radius: 20px;
+          border: none;
+          background: rgba(255,255,255,0.1);
+          color: white;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          backdrop-filter: blur(10px);
+          position: relative;
+        }
+        .call-btn.medium { width: 50px; height: 50px; border-radius: 15px; }
+        .call-btn.large { width: 85px; height: 85px; border-radius: 25px; }
+        .call-btn.extra-large { width: 110px; height: 110px; border-radius: 35px; }
+        
+        .call-btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-4px); }
+        .call-btn.active { background: var(--primary); }
+        .call-btn.muted.active { background: #ef4444; }
+        .call-btn.warning.active { background: #f59e0b; }
+        .call-btn.danger { background: #ef4444; }
+        .call-btn.success { background: #22c55e; }
+        
+        .btn-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          opacity: 0.8;
+        }
+        
+        .pulse { animation: ring-pulse 2s infinite; }
+        @keyframes ring-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+          70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .console-btn {
+          position: absolute;
+          right: 30px;
+          bottom: 0;
+        }
+
         .force-audio-btn {
           position: absolute;
-          bottom: 120px;
+          bottom: 180px;
           left: 50%;
           transform: translateX(-50%);
           background: var(--primary);
           color: white;
           border: none;
-          padding: 8px 16px;
-          border-radius: 20px;
+          padding: 10px 20px;
+          border-radius: 25px;
           font-weight: bold;
-          font-size: 12px;
+          font-size: 14px;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           cursor: pointer;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.4);
           z-index: 100;
-          animation: pulse 2s infinite;
+          animation: btn-float 2s infinite ease-in-out;
         }
-        @keyframes pulse {
-          0% { transform: translateX(-50%) scale(1); }
-          50% { transform: translateX(-50%) scale(1.05); }
-          100% { transform: translateX(-50%) scale(1); }
-        }
-        .mic-meter {
-          display: flex;
-          gap: 3px;
-          height: 15px;
-          align-items: flex-end;
-          margin-top: 15px;
-          justify-content: center;
-        }
-        .mic-bar {
-          width: 5px;
-          background: var(--primary);
-          border-radius: 2px;
-          min-height: 2px;
-          transition: height 0.1s ease;
+        @keyframes btn-float {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-10px); }
         }
       `}</style>
     </div>
