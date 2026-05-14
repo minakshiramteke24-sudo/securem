@@ -228,80 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         <div className={`tab-indicator ${activeTab}`} />
       </div>
 
-      {/* STORIES REEL (HORIZONTAL) - ONLY SHOW IN CHATS TAB FOR QUICK ACCESS */}
-      {activeTab === 'chats' && !searchTerm && (
-        <div className="story-bar-premium">
-             <motion.div 
-               className="story-item my-story"
-               whileHover={{ scale: 1.05 }}
-               onClick={() => {
-                 const myStoryIndex = stories.findIndex(s => s.uid === user?.uid);
-                 if (myStoryIndex !== -1) {
-                   setActiveStoryIndex(myStoryIndex);
-                 } else {
-                   setIsPostingStory(true);
-                 }
-               }}
-             >
-               <div className="story-ring mine">
-                 <div className="avatar">
-                   {user?.photoURL ? <img src={user.photoURL} alt="Me" /> : user?.displayName?.[0] || "Y"}
-                   <div className="add-icon" onClick={(e) => { e.stopPropagation(); setIsPostingStory(true); }}>+</div>
-                 </div>
-               </div>
-               <span className="story-username">My Story</span>
-             </motion.div>
-
-             <AnimatePresence>
-                {isPostingStory && (
-                  <StoryCreator 
-                    onClose={() => setIsPostingStory(false)}
-                    onPost={async (type, content, musicData) => {
-                      if (user) {
-                        await postStory(user.uid, user.displayName || "Secure User", user.photoURL || undefined, type, content, musicData);
-                        setIsPostingStory(false);
-                      }
-                    }}
-                  />
-                )}
-             </AnimatePresence>
-
-             {/* GROUPED STORIES */}
-             {Object.values(stories.reduce((acc: any, s) => {
-                if (!acc[s.uid]) acc[s.uid] = [];
-                acc[s.uid].push(s);
-                return acc;
-             }, {})).map((userStories: any) => {
-               const latestStory = userStories[0];
-               const isMyGroup = latestStory.uid === user?.uid;
-               if (isMyGroup) return null;
-
-               return (
-                 <motion.div
-                   key={latestStory.uid}
-                   className="story-item"
-                   initial={{ opacity: 0, scale: 0.8 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                   onClick={() => {
-                     const globalIdx = stories.findIndex(s => s.uid === latestStory.uid);
-                     setActiveStoryIndex(globalIdx);
-                   }}
-                 >
-                   <div className="story-ring active">
-                     <div className="avatar">
-                       {latestStory.avatar ? <img src={latestStory.avatar} alt={latestStory.username} /> : latestStory.username[0].toUpperCase()}
-                     </div>
-                   </div>
-                   <span className="story-username">{latestStory.username}</span>
-                 </motion.div>
-               );
-             })}
-        </div>
-      )}
-
-      {/* CHAT LIST / SEARCH RESULTS / STORY FEED */}
+      {/* STORY TAB CONTENT */}
       <div className="sidebar-content">
         <AnimatePresence mode="wait">
           {searchTerm.length >= 2 ? (
@@ -344,18 +271,31 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
               exit={{ opacity: 0, x: -20 }}
             >
               <p className="section-label">My Status</p>
-              <div className="story-list-item mine" onClick={() => setIsPostingStory(true)}>
-                <div className="avatar-wrapper">
-                  <div className="avatar" style={{ border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.1)' }}>
-                    {user?.photoURL ? <img src={user.photoURL} alt="" /> : user?.displayName?.[0]}
-                    <div className="add-badge">+</div>
+              {(() => {
+                const myStoryIndex = stories.findIndex(s => s.uid === user?.uid);
+                const hasStory = myStoryIndex !== -1;
+                
+                return (
+                  <div 
+                    className="story-list-item mine" 
+                    onClick={() => {
+                      if (hasStory) setActiveStoryIndex(myStoryIndex);
+                      else setIsPostingStory(true);
+                    }}
+                  >
+                    <div className="avatar-wrapper">
+                      <div className={`avatar ${hasStory ? 'active-ring' : ''}`} style={!hasStory ? { border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.1)' } : {}}>
+                        {user?.photoURL ? <img src={user.photoURL} alt="" /> : user?.displayName?.[0]}
+                        <div className="add-badge" onClick={(e) => { e.stopPropagation(); setIsPostingStory(true); }}>+</div>
+                      </div>
+                    </div>
+                    <div className="story-info">
+                      <p className="username">{hasStory ? "My Story" : "Post to Story"}</p>
+                      <p className="subtitle">{hasStory ? "Tap to view or share more" : "Tap to share a moment"}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="story-info">
-                  <p className="username">Post to Story</p>
-                  <p className="subtitle">Tap to share a moment</p>
-                </div>
-              </div>
+                );
+              })()}
 
               <p className="section-label">Recent Updates</p>
               {Object.values(stories.reduce((acc: any, s) => {
