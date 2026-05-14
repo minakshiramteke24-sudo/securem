@@ -3,8 +3,9 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Loader2
+  Shield, Loader2, Smile
 } from "lucide-react";
+import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
 import { useCrypto } from "../../context/CryptoContext";
 import { 
@@ -48,6 +49,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [activeTransfer, setActiveTransfer] = useState<TransferSession | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -267,12 +269,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       </div>
 
       <div className="input-area">
+        <AnimatePresence>
+          {showEmojiPicker && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              style={{ position: 'absolute', bottom: '100%', left: '10px', zIndex: 1000, marginBottom: '10px' }}
+            >
+              <CustomEmojiPicker onEmojiSelect={(emoji) => {
+                setInputText(prev => prev + emoji);
+                inputRef.current?.focus();
+              }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <form onSubmit={handleSend} className="chat-input-container">
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-            {uploading ? <Loader2 size={24} className="animate-spin" /> : <Paperclip size={24} />}
-          </button>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              {uploading ? <Loader2 size={24} className="animate-spin" /> : <Paperclip size={24} />}
+            </button>
+            <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+              <Smile size={24} color={showEmojiPicker ? 'var(--primary)' : 'currentColor'} />
+            </button>
+          </div>
           <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: "none" }} />
-          <input ref={inputRef} type="text" className="chat-input" placeholder="Type a secure message..." value={inputText} onChange={(e) => setInputText(e.target.value)} />
+          <input 
+            ref={inputRef} 
+            type="text" 
+            className="chat-input" 
+            placeholder="Type a secure message..." 
+            value={inputText} 
+            onChange={(e) => setInputText(e.target.value)} 
+            onFocus={() => setShowEmojiPicker(false)}
+          />
           <button type="submit" className="send-btn"><Send size={22} /></button>
         </form>
       </div>
