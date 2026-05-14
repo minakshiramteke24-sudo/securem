@@ -1491,38 +1491,38 @@ input:focus {
 @media (max-width: 850px) { .app-container { grid-template-columns: 1fr !important; } .sidebar { width: 100% !important; position: absolute; inset: 0; z-index: 10; transition: transform 0.3s ease; } .app-container.has-selected-chat .sidebar { transform: translateX(-100%); } .chat-window { width: 100% !important; } .app-container:not(.has-selected-chat) .chat-window { display: none !important; } .back-btn { display: flex !important; } }
 
 /* --- PROFESSIONAL LIGHT MODE OVERRIDE (v2.4.4 Master) --- */
-[data-theme=" light\] {
- --bg-dark: #f8fafc !important;
- --bg-card: #ffffff !important;
- --text-main: #0f172a !important;
- --text-muted: #64748b !important;
- --border: rgba(0, 0, 0, 0.05) !important;
- --glass: rgba(255, 255, 255, 0.8) !important;
- --glass-border: rgba(0, 0, 0, 0.04) !important;
- --primary: #6366f1 !important;
- --primary-hover: #4f46e5 !important;
- --accent: #10b981 !important;
+[data-theme="light"] {
+  --bg-dark: #f8fafc !important;
+  --bg-card: #ffffff !important;
+  --text-main: #0f172a !important;
+  --text-muted: #64748b !important;
+  --border: rgba(0, 0, 0, 0.05) !important;
+  --glass: rgba(255, 255, 255, 0.8) !important;
+  --glass-border: rgba(0, 0, 0, 0.04) !important;
+  --primary: #6366f1 !important;
+  --primary-hover: #4f46e5 !important;
+  --accent: #10b981 !important;
 }
 
-[data-theme=\light\] .chat-window {
- background-image: none !important;
- background-color: var(--bg-dark) !important;
+[data-theme="light"] .chat-window {
+  background-image: none !important;
+  background-color: var(--bg-dark) !important;
 }
 
-[data-theme=\light\] .message-bubble.them {
- background-color: #ffffff !important;
- box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
- border: 1px solid rgba(0,0,0,0.05) !important;
+[data-theme="light"] .message-bubble.them {
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
 }
 
-[data-theme=\light\] .sidebar {
- background-color: #ffffff !important;
- border-right: 1px solid rgba(0,0,0,0.05) !important;
+[data-theme="light"] .sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid rgba(0,0,0,0.05) !important;
 }
 
-[data-theme=\light\] .sidebar-header {
- background-color: #ffffff !important;
- border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+[data-theme="light"] .sidebar-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
 }
 
 /* WELCOME SCREEN PREMIUM STYLES */
