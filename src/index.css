@@ -1606,3 +1606,13 @@ input:focus {
   color: #ffffff !important;
   font-weight: 800;
 }
+
+/* --- HEADER ICON REFINEMENTS (v2.4.4) --- */
+[data-theme="light"] .header-actions button {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .header-actions button:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
