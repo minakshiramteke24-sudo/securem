@@ -176,15 +176,52 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                 />
               ) : currentStory.type === 'audio' ? (
                 (() => {
-                  const isYoutube = currentStory.content.includes('youtube.com') || currentStory.content.includes('youtu.be');
+                  const getYoutubeId = (url: string) => {
+                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                    const match = url.match(regExp);
+                    return (match && match[2].length === 11) ? match[2] : null;
+                  };
+                  
+                  const ytId = getYoutubeId(currentStory.content);
+                  
+                  if (ytId) {
+                    return (
+                      <div className="story-audio-card youtube-embedded">
+                        <div className="youtube-window">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&modestbranding=1`}
+                            title="YouTube video player"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            style={{ borderRadius: '20px' }}
+                          />
+                        </div>
+                        <div className="audio-info" style={{ marginTop: '15px' }}>
+                          <h3>{currentStory.musicData?.title || "YouTube Video"}</h3>
+                          <a 
+                            href={currentStory.content} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#ff0000', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            Open in YouTube →
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div className={`story-audio-card ${isYoutube ? 'youtube' : ''}`}>
+                    <div className="story-audio-card">
                       <div className="audio-visualizer-orb">
-                        {isYoutube ? <div style={{ fontSize: '4rem' }}>📺</div> : <Shield size={60} color="white" />}
+                        <Shield size={60} color="white" />
                       </div>
                       <div className="audio-info">
-                        <h3>{currentStory.musicData?.title || (isYoutube ? "YouTube Video" : "Secure Track")}</h3>
-                        <p>{currentStory.musicData?.artist || (isYoutube ? "External Link" : "Encrypted Artist")}</p>
+                        <h3>{currentStory.musicData?.title || "Secure Track"}</h3>
+                        <p>{currentStory.musicData?.artist || "Encrypted Artist"}</p>
                       </div>
                       <div className="audio-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                         <a 
@@ -192,9 +229,9 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="btn-primary"
-                          style={{ padding: '12px 24px', borderRadius: '15px', textDecoration: 'none', background: isYoutube ? '#ff0000' : 'var(--primary)' }}
+                          style={{ padding: '12px 24px', borderRadius: '15px', textDecoration: 'none' }}
                         >
-                          {isYoutube ? "Watch Video" : "Listen Now"}
+                          Listen Now
                         </a>
                       </div>
                     </div>
@@ -415,9 +452,19 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ stories, initialIndex, onClos
           animation: orb-pulse 2s infinite ease-in-out;
         }
 
-        .story-audio-card.youtube .audio-visualizer-orb {
-          background: linear-gradient(135deg, #ff0000, #b91c1c);
-          box-shadow: 0 20px 50px rgba(239, 68, 68, 0.4);
+        .story-audio-card.youtube-embedded {
+          width: 100%;
+          padding: 10px;
+        }
+
+        .youtube-window {
+          width: 100%;
+          aspect-ratio: 16/9;
+          background: #000;
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.1);
         }
 
         @keyframes orb-pulse {
