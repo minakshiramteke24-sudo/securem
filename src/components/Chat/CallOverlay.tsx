@@ -39,6 +39,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
   const [isSpeakerOff, setIsSpeakerOff] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [connectionTime, setConnectionTime] = useState(0);
@@ -83,7 +84,7 @@ const CallOverlay: React.FC<CallOverlayProps> = ({ call, isIncoming, onClose }) 
     return null;
   }, [user, call.recipientId, call.callerId, status]);
 
-  const handleEnd = useCallback(async (reason: string = 'User Action') => {
+  const handleEnd = useCallback(async (_reason?: string) => {
     if (!shouldEndCall.current) return;
     shouldEndCall.current = false;
     await callManager.cleanup();
