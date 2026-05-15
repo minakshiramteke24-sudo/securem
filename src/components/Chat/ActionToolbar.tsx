@@ -47,8 +47,8 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
       padding: "0 1.5rem",
-      background: "var(--bg-card)",
-      backdropFilter: "blur(20px)",
+      background: "rgba(0, 0, 0, 0.2)",
+      backdropFilter: "blur(25px)",
       borderBottom: "2px solid var(--primary)",
       zIndex: 2000,
       boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
