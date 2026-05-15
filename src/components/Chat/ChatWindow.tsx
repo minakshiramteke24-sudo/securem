@@ -25,6 +25,7 @@ import {
 import { 
   updateUserStatus 
 } from "../../services/userService";
+import { updateUserSettings } from "../../services/settingsService";
 import { rtdb } from "../../services/firebase";
 import { ref, onValue } from "firebase/database";
 import MessageBubble from "./MessageBubble";
@@ -61,13 +62,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [wpPosition, setWpPosition] = useState("center");
   const [wpSize, setWpSize] = useState("cover");
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
-  const [isGhostMode, setIsGhostMode] = useState(false);
+  const [isGhostMode, setIsGhostMode] = useState(settings?.privacy?.stealthMode || false);
   const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
   const [wallpaperZoom, setWallpaperZoom] = useState(100);
+
+  useEffect(() => {
+    setIsGhostMode(settings?.privacy?.stealthMode || false);
+  }, [settings?.privacy?.stealthMode]);
   const [wallpaperPos, setWallpaperPos] = useState({ x: 50, y: 50 });
   const [isDraggingWp, setIsDraggingWp] = useState(false);
 
-  // Stealth Mode Effect: When on, appear offline to others
+  // Stealth Mode Effect: When on, appear offline to others (handled by App.tsx settings listener, but we keep this for instant local feedback)
   useEffect(() => {
     if (!user) return;
     if (isGhostMode) {
@@ -503,10 +508,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <Search size={20} />
                     </motion.button>
 
-                    <motion.button
-                      whileHover={{ scale: 1.05, background: isGhostMode ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)' }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setIsGhostMode(!isGhostMode)}
+                    <button
+                      onClick={async () => {
+                        const newState = !isGhostMode;
+                        setIsGhostMode(newState);
+                        if (user) {
+                          await updateUserSettings(user.uid, {
+                            privacy: { ...settings.privacy, stealthMode: newState }
+                          });
+                        }
+                      }}
+                      className={`toolbar-btn ${isGhostMode ? 'active ghost' : ''}`}
+                      title={isGhostMode ? "Ghost Mode Active" : "Go Invisible"}
                       style={{
                         width: '40px',
                         height: '40px',
