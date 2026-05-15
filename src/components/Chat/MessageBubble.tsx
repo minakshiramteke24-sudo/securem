@@ -4,7 +4,7 @@ import { type Message } from "../../services/chatService";
 import { type UserProfile } from "../../services/userService";
 import { useCrypto } from "../../context/CryptoContext";
 import { useAuth } from "../../context/AuthContext";
-import { unwrapAESKey, decryptMessage } from "../../services/cryptoService";
+import { unwrapAESKey, decryptMessage, importSigningPublicKey, verifyData } from "../../services/cryptoService";
 import { Shield, ShieldCheck, CheckCircle2, FileText, Download, Check, CheckCheck } from "lucide-react";
 import { decryptBase64File } from "../../services/mediaService";
 
@@ -81,7 +81,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }
 
         if (message.signature && senderProfile.signingPublicKey) {
-          const { importSigningPublicKey, verifyData } = await import("../../services/cryptoService");
           const signingPubKey = await importSigningPublicKey(senderProfile.signingPublicKey);
           const verified = await verifyData(message.ciphertext, message.signature, signingPubKey);
           setIsVerified(verified);
@@ -93,7 +92,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     };
 
     decryptAndVerify();
-  }, [message, privateKey, user, senderProfile]);
+  }, [
+    message.id, 
+    message.ciphertext, 
+    message.signature, 
+    message.deleted, 
+    privateKey, 
+    user?.uid, 
+    senderProfile?.uid,
+    senderProfile?.signingPublicKey
+  ]);
 
   useEffect(() => {
     const handleMedia = async () => {
@@ -120,7 +128,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     return () => {
       if (mediaUrl) URL.revokeObjectURL(mediaUrl);
     };
-  }, [message.media, privateKey, user]);
+  }, [message.id, !!message.media, privateKey, user?.uid]);
 
   const formatTime = (ts: any) => {
     if (!ts) return "";
@@ -548,4 +556,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   );
 };
 
-export default MessageBubble;
+// Performance Optimization: Use memo with deep comparison for the message object
+// to prevent unnecessary re-renders when the list is refreshed from RTDB.
+export default React.memo(MessageBubble, (prev, next) => {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.ciphertext === next.message.ciphertext &&
+    prev.message.signature === next.message.signature &&
+    prev.message.deleted === next.message.deleted &&
+    prev.message.read === next.message.read &&
+    prev.message.edited === next.message.edited &&
+    JSON.stringify(prev.message.reactions) === JSON.stringify(next.message.reactions) &&
+    prev.isSelected === next.isSelected &&
+    prev.searchQuery === next.searchQuery &&
+    prev.senderProfile?.uid === next.senderProfile?.uid &&
+    prev.senderProfile?.status === next.senderProfile?.status
+  );
+});

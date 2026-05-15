@@ -493,27 +493,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             : undefined 
         }}
       >
-        {messages.map((msg) => {
-          const repliedMsgData = msg.replyTo ? messages.find(m => m.id === msg.replyTo) : null;
-          const repliedMessage = repliedMsgData ? {
-            sender: repliedMsgData.senderId === user?.uid ? "You" : (recipient?.username || "Secure User"),
-            text: repliedMsgData.text || "Media file"
-          } : null;
+        {(() => {
+          // Optimization: Create a map for O(1) lookups of replied messages
+          const messageMap = new Map(messages.map(m => [m.id, m]));
+          
+          return messages.map((msg) => {
+            const repliedMsgData = msg.replyTo ? messageMap.get(msg.replyTo) : null;
+            const repliedMessage = repliedMsgData ? {
+              sender: repliedMsgData.senderId === user?.uid ? "You" : (recipient?.username || "Secure User"),
+              text: repliedMsgData.text || "Media file"
+            } : null;
 
-          return (
-            <MessageBubble 
-              key={msg.id} 
-              message={msg} 
-              senderProfile={msg.senderId === user?.uid ? profile : recipient}
-              isSelected={selectedMessageIds.includes(msg.id)}
-              onSelect={handleSelectMessage}
-              onReaction={(emoji) => toggleReaction(chatId!, msg.id, user!.uid, emoji)}
-              onOpenMedia={(url) => setLightboxUrl(url)}
-              repliedMessage={repliedMessage}
-              searchQuery={searchQuery}
-            />
-          );
-        })}
+            return (
+              <MessageBubble 
+                key={msg.id} 
+                message={msg} 
+                senderProfile={msg.senderId === user?.uid ? profile : recipient}
+                isSelected={selectedMessageIds.includes(msg.id)}
+                onSelect={handleSelectMessage}
+                onReaction={(emoji) => toggleReaction(chatId!, msg.id, user!.uid, emoji)}
+                onOpenMedia={(url) => setLightboxUrl(url)}
+                repliedMessage={repliedMessage}
+                searchQuery={searchQuery}
+              />
+            );
+          });
+        })()}
         <div ref={bottomRef} />
       </div>
 
