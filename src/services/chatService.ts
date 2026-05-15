@@ -222,24 +222,24 @@ export const sendMessage = async (
     try {
       const updates: any = {};
       
-      // Update Sender's view (recipient info)
-      updates[`user-chats/${senderId}/${chatId}/summary`] = { 
-        ...summary, 
-        recipientId, 
-        recipientName: recipientProfile.username,
-        recipientAvatar: recipientProfile.avatar || null,
-        isUnread: false 
-      };
+      // Update Sender's view
+      const senderSummaryPath = `user-chats/${senderId}/${chatId}/summary`;
+      updates[`${senderSummaryPath}/lastMessage`] = "Encrypted message";
+      updates[`${senderSummaryPath}/updatedAt`] = timestamp;
+      updates[`${senderSummaryPath}/recipientId`] = recipientId;
+      updates[`${senderSummaryPath}/recipientName`] = recipientProfile.username;
+      updates[`${senderSummaryPath}/recipientAvatar`] = recipientProfile.avatar || null;
+      updates[`${senderSummaryPath}/isUnread`] = false;
       updates[`user-chats/${senderId}/${chatId}/active`] = true;
       
-      // Update Recipient's view (sender info)
-      updates[`user-chats/${recipientId}/${chatId}/summary`] = { 
-        ...summary, 
-        recipientId: senderId, 
-        recipientName: senderProfile.username,
-        recipientAvatar: senderProfile.avatar || null,
-        isUnread: true 
-      };
+      // Update Recipient's view
+      const recipientSummaryPath = `user-chats/${recipientId}/${chatId}/summary`;
+      updates[`${recipientSummaryPath}/lastMessage`] = "Encrypted message";
+      updates[`${recipientSummaryPath}/updatedAt`] = timestamp;
+      updates[`${recipientSummaryPath}/recipientId`] = senderId;
+      updates[`${recipientSummaryPath}/recipientName`] = senderProfile.username;
+      updates[`${recipientSummaryPath}/recipientAvatar`] = senderProfile.avatar || null;
+      updates[`${recipientSummaryPath}/isUnread`] = true;
       updates[`user-chats/${recipientId}/${chatId}/active`] = true;
       
       updates[`chats/${chatId}/updatedAt`] = timestamp;
@@ -300,8 +300,17 @@ export const sendMediaMessage = async (
     };
 
     const updates: any = {};
-    updates[`user-chats/${senderId}/${chatId}/summary`] = { ...summary, recipientId, isUnread: false };
-    updates[`user-chats/${recipientId}/${chatId}/summary`] = { ...summary, recipientId: senderId, isUnread: true };
+    const senderSummaryPath = `user-chats/${senderId}/${chatId}/summary`;
+    updates[`${senderSummaryPath}/lastMessage`] = `📷 ${fileMetadata.type.startsWith('image/') ? 'Photo' : 'File'}`;
+    updates[`${senderSummaryPath}/updatedAt`] = timestamp;
+    updates[`${senderSummaryPath}/recipientId`] = recipientId;
+    updates[`${senderSummaryPath}/isUnread`] = false;
+
+    const recipientSummaryPath = `user-chats/${recipientId}/${chatId}/summary`;
+    updates[`${recipientSummaryPath}/lastMessage`] = `📷 ${fileMetadata.type.startsWith('image/') ? 'Photo' : 'File'}`;
+    updates[`${recipientSummaryPath}/updatedAt`] = timestamp;
+    updates[`${recipientSummaryPath}/recipientId`] = senderId;
+    updates[`${recipientSummaryPath}/isUnread`] = true;
     updates[`chats/${chatId}/updatedAt`] = timestamp;
     await update(ref(rtdb), updates);
 

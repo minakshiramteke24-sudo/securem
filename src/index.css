@@ -423,6 +423,7 @@ input:focus {
   position: relative;
   z-index: 1000;
   height: 70px;
+  background: transparent;
 }
 
 .chat-header {
@@ -779,9 +780,7 @@ input:focus {
 
 .chat-top-bar {
   height: 72px;
-  background: rgba(15, 15, 18, 0.8);
-  backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border);
+  background: transparent;
   display: flex;
   align-items: center;
   z-index: 100;
