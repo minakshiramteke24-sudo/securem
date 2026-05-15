@@ -1,5 +1,5 @@
 import { rtdb, storage } from "./firebase";
-import { ref, push, set, onValue, off, update, increment, get } from "firebase/database";
+import { ref, push, set, onValue, off, update, increment } from "firebase/database";
 import { ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export interface Reel {

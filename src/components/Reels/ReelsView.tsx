@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Heart, MessageCircle, Share2, Music, 
-  Plus, ArrowLeft, Play, Pause, Volume2, VolumeX 
+  Plus, ArrowLeft, Play, Volume2, VolumeX 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Reel, subscribeToReels, likeReel, incrementView } from '../../services/reelsService';
+import { type Reel, subscribeToReels, likeReel, incrementView } from '../../services/reelsService';
 import ReelsUpload from './ReelsUpload';
 
 interface ReelsViewProps {
@@ -13,7 +13,7 @@ interface ReelsViewProps {
 }
 
 const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
