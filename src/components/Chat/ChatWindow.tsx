@@ -60,7 +60,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(settings?.privacy?.stealthMode || false);
   const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
-  const [wallpaperZoom, setWallpaperZoom] = useState(100);
+  const [wallpaperZoom, setWallpaperZoom] = useState(150);
 
   useEffect(() => {
     setIsGhostMode(settings?.privacy?.stealthMode || false);
@@ -1261,25 +1261,31 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   pointerEvents: 'none'
                 }} />
 
-                {/* Mask Overlay with Hole (The White Box) */}
+                {/* Mask Overlay with Hole (The White Box - representing chat aspect ratio) */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
                   pointerEvents: 'none',
-                  boxShadow: '0 0 0 200px rgba(0,0,0,0.6)', // Mask around the box
-                  border: '2px solid rgba(255,255,255,1)', // The "White Box"
-                  margin: '40px', // This makes the white box smaller than the image area
-                  borderRadius: '12px'
+                  boxShadow: '0 0 0 400px rgba(0,0,0,0.6)', // Mask around the box
+                  border: '3px solid rgba(255,255,255,1)', // The "White Box"
+                  margin: '20px 80px', // More vertical and taller
+                  borderRadius: '24px',
+                  boxShadow: '0 0 20px rgba(0,0,0,0.5), 0 0 0 400px rgba(0,0,0,0.6)'
                 }} />
                 
                 {/* Mock UI for context (inside the white box area) */}
-                <div style={{ position: 'absolute', top: '55px', left: '55px', right: '55px', display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
-                   <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-                   <div style={{ width: '80px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.2)', marginTop: '8px' }} />
-                   <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                <div style={{ position: 'absolute', top: '35px', left: '95px', right: '95px', display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                   <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
+                   <div style={{ width: '80px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.3)', marginTop: '12px' }} />
+                   <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
                 </div>
-                <div style={{ position: 'absolute', bottom: '65px', right: '60px', padding: '10px 15px', background: 'var(--primary)', borderRadius: '15px 15px 4px 15px', fontSize: '0.8rem', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', pointerEvents: 'none' }}>
-                  Looks good! 📸
+                
+                <div style={{ position: 'absolute', bottom: '100px', left: '95px', padding: '10px 14px', background: 'rgba(255,255,255,0.1)', borderRadius: '14px 14px 14px 4px', fontSize: '0.75rem', color: 'white', maxWidth: '120px', pointerEvents: 'none' }}>
+                  Previewing... 💬
+                </div>
+
+                <div style={{ position: 'absolute', bottom: '45px', right: '95px', padding: '12px 18px', background: 'var(--primary)', borderRadius: '18px 18px 4px 18px', fontSize: '0.8rem', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', pointerEvents: 'none' }}>
+                  Looks perfect! 📸
                 </div>
               </div>
 
