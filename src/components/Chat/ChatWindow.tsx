@@ -38,7 +38,7 @@ interface ChatWindowProps {
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBack }) => {
-  const { user, profile, settings } = useAuth();
+  const { user, profile } = useAuth();
   const { signingPrivateKey } = useCrypto();
 
   const [messages, setMessages] = useState<any[]>([]);
