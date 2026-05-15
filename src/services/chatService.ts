@@ -56,6 +56,7 @@ export interface Message {
     iv?: string; 
   };
   hiddenFor?: { [uid: string]: boolean };
+  read?: boolean;
 }
 
 const getChatId = (uid1: string, uid2: string) => [uid1, uid2].sort().join("_");
