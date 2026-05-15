@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { X, Upload, Video, Save, CheckCircle } from 'lucide-react';
+import { X, Upload, Save, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { uploadReel } from '../../services/reelsService';
 
@@ -32,7 +31,7 @@ const ReelsUpload: React.FC<ReelsUploadProps> = ({ onClose }) => {
     
     setIsUploading(true);
     try {
-      await uploadReel(user.uid, profile.username, profile.avatar, file, caption);
+      await uploadReel(user.uid, profile.username, profile.avatar || '', file, caption);
       setIsSuccess(true);
       setTimeout(() => onClose(), 2000);
     } catch (err: any) {

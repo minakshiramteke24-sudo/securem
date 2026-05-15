@@ -13,7 +13,6 @@ interface ReelsViewProps {
 }
 
 const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
-  const { profile } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
