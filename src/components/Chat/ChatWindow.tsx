@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Phone, Video, Send, 
+import {
+  ArrowLeft, Phone, Video, Send,
   Shield, X, Mic, Trash2, Search, Pin
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
 import { useCrypto } from "../../context/CryptoContext";
-import { 
-  sendMessage, 
-  getOrCreateChat, 
-  subscribeToMessages, 
+import {
+  sendMessage,
+  getOrCreateChat,
+  subscribeToMessages,
   markAsRead,
   markMessageAsRead,
   toggleReaction,
@@ -19,11 +19,10 @@ import {
   setTypingStatus,
   deleteForMe,
   deleteForEveryone,
-  setChatWallpaper,
   pinMessage
 } from "../../services/chatService";
 import { rtdb } from "../../services/firebase";
-import { ref, onValue, get } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import MessageBubble from "./MessageBubble";
 import ActionToolbar from "./ActionToolbar";
 import { prepareEncryptedFile } from "../../services/mediaService";
@@ -40,7 +39,7 @@ interface ChatWindowProps {
 const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBack }) => {
   const { user, profile, settings } = useAuth();
   const { signingPrivateKey } = useCrypto();
-  
+
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [chatId, setChatId] = useState<string | null>(null);
@@ -56,9 +55,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
   const [activeWallpaper, setActiveWallpaper] = useState<string | null>(null);
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
-  const [pinnedMsgData, setPinnedMsgData] = useState<any | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(false);
-  
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +77,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       // Deterministic ID allows instant subscription without waiting for DB
       const id = [user.uid, recipient.uid].sort().join("_");
       setChatId(id);
-      
+
       // Ensure metadata and Sequential Handshake happens in background
       getOrCreateChat(user.uid, recipient.uid);
     }
@@ -110,14 +108,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
       setMessages(msgs);
       markAsRead(chatId, user.uid);
-      
+
       // Mark incoming messages as read
       msgs.forEach(msg => {
         if (msg.senderId === recipient.uid && !msg.read) {
           markMessageAsRead(chatId, msg.id);
         }
       });
-      
+
       // Update wallpaper from summary (handled by separate listener)
     });
 
@@ -134,7 +132,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         if (pending) setActiveTransfer(pending);
       }
     });
-    
+
     const chatSummaryRef = ref(rtdb, `user-chats/${user.uid}/${chatId}/summary`);
     const unsubscribeSummary = onValue(chatSummaryRef, (snap) => {
       if (snap.exists()) {
@@ -143,7 +141,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         setPinnedMessageId(data.pinnedMessageId || null);
       }
     });
-    
+
     return () => {
       unsubscribe();
       unsubscribeTyping();
@@ -151,18 +149,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       unsubscribeSummary();
     };
   }, [chatId, user, recipient.uid]);
-  
+
   // Generalized Click outside to close overlays
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      
+
       // Emoji Picker
       if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(target) &&
-          emojiToggleRef.current && !emojiToggleRef.current.contains(target)) {
+        emojiToggleRef.current && !emojiToggleRef.current.contains(target)) {
         setShowEmojiPicker(false);
       }
-      
+
       // Profile Modal
       if (showProfile && profileCardRef.current && !profileCardRef.current.contains(target)) {
         setShowProfile(false);
@@ -173,7 +171,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         setShowWallpaperPicker(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmojiPicker, showProfile]);
@@ -276,13 +274,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       stream.getTracks().forEach(track => track.stop());
       clearInterval(recordingTimerRef.current);
       setIsRecording(false);
-      
+
       mediaRecorderRef.current.onstop = async () => {
         if (audioChunksRef.current.length === 0 || recordingDuration < 1) return;
-        
+
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const file = new File([audioBlob], `VoiceNote_${Date.now()}.webm`, { type: 'audio/webm' });
-        
+
         setUploading(true);
         try {
           if (!chatId || !user || !signingPrivateKey) throw new Error("Missing credentials");
@@ -325,23 +323,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
   };
 
-  // Fetch pinned message if not in current messages list
-  useEffect(() => {
-    if (pinnedMessageId && !messages.find(m => m.id === pinnedMessageId)) {
-      const msgRef = ref(rtdb, `messages/${chatId}/${pinnedMessageId}`);
-      get(msgRef).then(snap => {
-        if (snap.exists()) setPinnedMsgData(snap.val());
-      });
-    } else if (pinnedMessageId) {
-      setPinnedMsgData(messages.find(m => m.id === pinnedMessageId));
-    } else {
-      setPinnedMsgData(null);
-    }
-  }, [pinnedMessageId, messages, chatId]);
+  const pinnedMsgData = pinnedMessageId ? messages.find(m => m.id === pinnedMessageId) : null;
 
 
   return (
-    <motion.main 
+    <motion.main
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="chat-window"
@@ -350,7 +336,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         <AnimatePresence mode="wait">
           {selectedMessageIds.length > 0 ? (
             <motion.div key="toolbar" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} style={{ width: "100%", height: "100%" }}>
-              <ActionToolbar 
+              <ActionToolbar
                 selectedCount={selectedMessageIds.length}
                 onClose={() => setSelectedMessageIds([])}
                 onDeleteForMe={() => {
@@ -401,22 +387,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               />
             </motion.div>
           ) : (
-            <motion.header 
+            <motion.header
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="chat-header" 
-              style={{ 
-                padding: '0 1.5rem', 
-                height: '72px', 
-                borderBottom: `1px solid ${isGhostMode ? 'rgba(168, 85, 247, 0.3)' : 'var(--border)'}`, 
-                background: isGhostMode ? 'rgba(20, 10, 40, 0.95)' : 'rgba(var(--bg-card-rgb), 0.8)', 
-                backdropFilter: 'blur(12px)', 
-                display: 'flex', 
-                alignItems: 'center', 
+              className="chat-header"
+              style={{
+                padding: '0 1.5rem',
+                height: '72px',
+                borderBottom: '1px solid var(--border)',
+                background: 'rgba(var(--bg-card-rgb), 0.8)',
+                backdropFilter: 'blur(12px)',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 position: 'relative',
-                zIndex: 100,
-                boxShadow: isGhostMode ? '0 4px 20px rgba(168, 85, 247, 0.15)' : 'none'
+                zIndex: 100
               }}
             >
               {isSearching ? (
@@ -424,18 +409,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   <button onClick={() => { setIsSearching(false); setSearchQuery(""); }} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
                     <ArrowLeft size={22} />
                   </button>
-                  <input 
+                  <input
                     autoFocus
-                    type="text" 
-                    placeholder="Search in conversation..." 
+                    type="text"
+                    placeholder="Search in conversation..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ 
-                      flex: 1, 
-                      background: 'rgba(255,255,255,0.05)', 
-                      border: '1px solid var(--border)', 
-                      borderRadius: '12px', 
-                      padding: '10px 18px', 
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      padding: '10px 18px',
                       color: 'var(--text-main)',
                       outline: 'none',
                       fontSize: '0.95rem'
@@ -461,7 +446,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                         <ArrowLeft size={22} />
                       </motion.button>
                     )}
-                    
+
                     <div style={{ position: 'relative' }}>
                       <div className="avatar" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'white', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                         {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>{recipient?.username?.[0]?.toUpperCase()}</span>}
@@ -475,10 +460,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>{recipient?.username || "Secure User"}</h3>
                       <p className="status-text" style={{ margin: 0, fontSize: '0.75rem', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {recipient?.status === 'online' && (
-                          <motion.span 
-                            animate={{ opacity: [0.5, 1, 0.5] }} 
+                          <motion.span
+                            animate={{ opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 2 }}
-                            style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} 
+                            style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}
                           />
                         )}
                         {recipientTyping ? "typing..." : (recipient?.status === 'online' ? "Active now" : (recipient?.status === 'offline' ? "Offline" : recipient?.status || "Click for profile"))}
@@ -495,50 +480,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                     >
                       <Search size={20} />
                     </motion.button>
-                    
+
                     <motion.button
                       whileHover={{ scale: 1.05, background: isGhostMode ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)' }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setIsGhostMode(!isGhostMode)}
-                      style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        borderRadius: '12px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        background: isGhostMode ? 'rgba(168, 85, 247, 0.1)' : 'transparent', 
-                        color: isGhostMode ? '#a855f7' : 'var(--text-muted)', 
-                        border: 'none', 
-                        cursor: 'pointer' 
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: isGhostMode ? 'rgba(168, 85, 247, 0.1)' : 'transparent',
+                        color: isGhostMode ? '#a855f7' : 'var(--text-muted)',
+                        border: 'none',
+                        cursor: 'pointer'
                       }}
                       title="Ghost Mode (Secret Chat)"
                     >
                       <Shield size={20} style={{ color: isGhostMode ? '#a855f7' : 'inherit' }} />
                     </motion.button>
 
-                    {isGhostMode && (
-                      <motion.button
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        whileHover={{ scale: 1.05, background: 'rgba(239, 68, 68, 0.1)' }}
-                        onClick={async () => {
-                          if (window.confirm("Purge all Ghost messages from this session?")) {
-                            // Logic to delete ghost messages
-                            const ghostMsgs = messages.filter(m => m.isGhost);
-                            for (const msg of ghostMsgs) {
-                              await deleteForEveryone(chatId!, msg.id, user!.uid);
-                            }
-                          }
-                        }}
-                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}
-                      >
-                        PURGE GHOST
-                      </motion.button>
-                    )}
-
                     <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
-                    
+
                     <motion.button
                       whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.05)' }}
                       whileTap={{ scale: 0.95 }}
@@ -547,15 +512,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       title="Chat Wallpaper"
                     >
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
                       </svg>
                     </motion.button>
 
                     <motion.button
                       whileHover={{ scale: 1.05, background: 'rgba(16, 185, 129, 0.1)' }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onInitiateCall({ 
-                        type: 'audio', 
+                      onClick={() => onInitiateCall({
+                        type: 'audio',
                         recipientId: recipient.uid,
                         chatId: chatId,
                         recipientUsername: recipient.username,
@@ -569,8 +534,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                     <motion.button
                       whileHover={{ scale: 1.05, background: 'rgba(99, 102, 241, 0.1)' }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onInitiateCall({ 
-                        type: 'video', 
+                      onClick={() => onInitiateCall({
+                        type: 'video',
                         recipientId: recipient.uid,
                         chatId: chatId,
                         recipientUsername: recipient.username,
@@ -595,12 +560,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            style={{ 
-              background: 'var(--bg-card)', 
-              borderBottom: '1px solid var(--border)', 
-              padding: '8px 16px', 
-              display: 'flex', 
-              alignItems: 'center', 
+            style={{
+              background: 'var(--bg-card)',
+              borderBottom: '1px solid var(--border)',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
               gap: '12px',
               zIndex: 10,
               cursor: 'pointer'
@@ -616,7 +581,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 {pinnedMsgData.text || (pinnedMsgData.media ? "Media file" : "Encrypted message")}
               </p>
             </div>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); handleUnpin(); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
             >
@@ -626,20 +591,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         )}
       </AnimatePresence>
 
-      <div 
-        className="messages-area" 
-        style={{ 
-          background: activeWallpaper ? `${activeWallpaper} !important` : (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
-            ? `${settings.appearance.wallpaper} !important` 
+      <div
+        className="messages-area"
+        style={{
+          background: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
+            ? settings.appearance.wallpaper
             : undefined),
-          backgroundSize: 'cover !important',
-          backgroundPosition: 'center !important'
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         }}
       >
         {(() => {
           // Optimization: Create a map for O(1) lookups of replied messages
           const messageMap = new Map(messages.map(m => [m.id, m]));
-          
+
           return messages.map((msg) => {
             const repliedMsgData = msg.replyTo ? messageMap.get(msg.replyTo) : null;
             const repliedMessage = repliedMsgData ? {
@@ -648,9 +613,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             } : null;
 
             return (
-              <MessageBubble 
-                key={msg.id} 
-                message={msg} 
+              <MessageBubble
+                key={msg.id}
+                message={msg}
                 senderProfile={msg.senderId === user?.uid ? profile : recipient}
                 isSelected={selectedMessageIds.includes(msg.id)}
                 onSelect={handleSelectMessage}
@@ -702,7 +667,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
         <AnimatePresence>
           {showEmojiPicker && (
-            <motion.div 
+            <motion.div
               ref={emojiPickerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -719,7 +684,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
         <AnimatePresence>
           {replyingTo && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -743,8 +708,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   {replyingTo.text ? (replyingTo.text.length > 50 ? replyingTo.text.substring(0, 50) + '...' : replyingTo.text) : 'Media file'}
                 </span>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setReplyingTo(null)}
                 style={{ background: 'transparent', color: 'var(--text-muted)' }}
               >
@@ -754,15 +719,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           )}
         </AnimatePresence>
 
-        <form 
+        <form
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="chat-input-container glass"
-          style={{ 
-            background: isGhostMode ? 'rgba(30, 20, 60, 0.9)' : 'var(--bg-card)', 
-            borderRadius: '24px', 
+          style={{
+            background: 'var(--bg-card)',
+            borderRadius: '24px',
             padding: '8px 12px',
-            boxShadow: isGhostMode ? '0 8px 32px rgba(168, 85, 247, 0.2)' : '0 8px 32px rgba(0,0,0,0.2)',
-            border: `1px solid ${isGhostMode ? 'rgba(168, 85, 247, 0.4)' : 'var(--glass-border)'}`,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            border: '1px solid var(--glass-border)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
@@ -771,16 +736,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           <button
             ref={emojiToggleRef}
             type="button"
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              color: '#ffffff', 
-              width: '40px', 
-              height: '40px', 
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#ffffff',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: 'none', 
+              border: 'none',
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
@@ -793,22 +758,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-              <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+              <circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" />
             </svg>
           </button>
 
           <button
             type="button"
-            style={{ 
-              background: 'rgba(255, 255, 255, 0.05)', 
-              color: '#ffffff', 
-              width: '40px', 
-              height: '40px', 
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#ffffff',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: 'none', 
+              border: 'none',
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
@@ -826,22 +791,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48" />
             </svg>
           </button>
 
           <AnimatePresence mode="wait">
             {isRecording ? (
 
-              <motion.div 
+              <motion.div
                 key="recording-ui"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  background: 'transparent', 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'transparent',
                   flex: 1,
                   justifyContent: 'space-between'
                 }}
@@ -868,8 +833,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   </motion.button>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <motion.div 
-                      animate={{ opacity: [1, 0, 1] }} 
+                    <motion.div
+                      animate={{ opacity: [1, 0, 1] }}
                       transition={{ repeat: Infinity, duration: 1.2 }}
                     >
                       <Mic size={18} color="#ef4444" />
@@ -880,7 +845,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   </div>
                 </div>
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}
@@ -901,10 +866,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 className="chat-input"
-                style={{ 
-                  flex: 1, 
-                  background: 'transparent', 
-                  border: 'none', 
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
                   boxShadow: 'none',
                   padding: '10px 4px',
                   fontSize: '1rem'
@@ -912,12 +877,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               />
             )}
           </AnimatePresence>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {(inputText.trim() === "" || isRecording) && (
-              <motion.button 
-                type="button" 
-                className="send-btn" 
+              <motion.button
+                type="button"
+                className="send-btn"
                 drag={isRecording ? "x" : false}
                 dragConstraints={{ left: -200, right: 0 }}
                 dragElastic={0.1}
@@ -943,14 +908,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 animate={isRecording ? { scale: 1.2, boxShadow: "0 0 30px rgba(236, 72, 153, 0.4)" } : {}}
-                style={{ 
-                  background: 'linear-gradient(135deg, #ec4899, #db2777)', 
-                  color: 'white', 
-                  borderRadius: '50%', 
-                  width: '46px', 
-                  height: '46px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                style={{
+                  background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '46px',
+                  height: '46px',
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   border: 'none',
@@ -963,22 +928,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             )}
 
             {inputText.trim() !== "" && !isRecording && (
-              <motion.button 
+              <motion.button
                 initial={{ scale: 0, rotate: -45 }}
                 animate={{ scale: 1, rotate: 0 }}
                 whileHover={{ scale: 1.1, x: 2 }}
                 whileTap={{ scale: 0.9 }}
-                type="submit" 
-                className="send-btn" 
-                style={{ 
-                  background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', 
-                  color: 'white', 
-                  borderRadius: '50%', 
-                  width: '46px', 
-                  height: '46px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
+                type="submit"
+                className="send-btn"
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '46px',
+                  height: '46px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   border: 'none',
                   boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.3)'
                 }}
@@ -992,7 +957,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
       <AnimatePresence>
         {showWallpaperPicker && (
-          <div 
+          <div
             className="wallpaper-picker-overlay"
             onClick={() => setShowWallpaperPicker(false)}
             style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
@@ -1005,45 +970,62 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '24px', width: '90%', maxWidth: '400px', border: '1px solid var(--border)' }}
             >
               <h3 style={{ margin: '0 0 20px 0', textAlign: 'center' }}>Chat Wallpaper</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                {[
-                  { name: 'Default', value: '' },
-                  { name: 'Sunset', value: 'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)' },
-                  { name: 'Ocean', value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
-                  { name: 'Midnight', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' },
-                  { name: 'Forest', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
-                  { name: 'Purple', value: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)' },
-                  { name: 'Vibrant', value: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' },
-                  { name: 'Mint', value: 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)' },
-                  { name: 'Rose', value: 'linear-gradient(135deg, #f80759 0%, #bc4e9c 100%)' }
-                ].map((wp) => (
-                  <button
-                    key={wp.name}
-                    onClick={async () => {
-                      if (user && chatId) {
-                        setActiveWallpaper(wp.value); // Local update for instant feedback
-                        await setChatWallpaper(user.uid, chatId, wp.value);
-                      }
-                      setShowWallpaperPicker(false);
-                    }}
-                    style={{ 
-                      height: '80px', 
-                      borderRadius: '12px', 
-                      background: wp.value || 'var(--bg-main)', 
-                      border: activeWallpaper === wp.value ? '3px solid var(--primary)' : '1px solid var(--border)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    {wp.name}
-                  </button>
-                ))}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ 
+                    padding: '12px', 
+                    borderRadius: '12px', 
+                    background: 'var(--primary)', 
+                    color: 'white', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Upload Custom Image
+                </button>
+
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  hidden 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file && user && chatId) {
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const base64 = reader.result as string;
+                        setActiveWallpaper(`url(${base64})`);
+                        await setChatWallpaper(user.uid, chatId, `url(${base64})`);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                    setShowWallpaperPicker(false);
+                  }} 
+                />
+
+                <button
+                  onClick={async () => {
+                    if (user && chatId) {
+                      setActiveWallpaper(null);
+                      await setChatWallpaper(user.uid, chatId, "");
+                    }
+                    setShowWallpaperPicker(false);
+                  }}
+                  style={{ padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  Remove Wallpaper
+                </button>
               </div>
             </motion.div>
           </div>
@@ -1052,75 +1034,75 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
       <AnimatePresence>
         {showProfile && (
-          <div 
-            className="profile-overlay" 
+          <div
+            className="profile-overlay"
             onClick={() => setShowProfile(false)}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           >
-            <motion.div 
+            <motion.div
               ref={profileCardRef}
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass profile-card" 
+              className="glass profile-card"
               onClick={e => e.stopPropagation()}
               style={{ background: 'var(--bg-card)', borderRadius: '24px', width: '90%', maxWidth: '360px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}
             >
-               {/* Header Banner */}
-               <div style={{ width: '100%', height: '120px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', position: 'relative' }}>
-                 <button 
-                   onClick={() => setShowProfile(false)}
-                   style={{ 
-                     position: 'absolute', 
-                     top: '15px', 
-                     right: '15px', 
-                     background: 'rgba(255,255,255,0.2)', 
-                     border: 'none', 
-                     color: 'white', 
-                     width: '32px', 
-                     height: '32px', 
-                     borderRadius: '50%', 
-                     display: 'flex', 
-                     alignItems: 'center', 
-                     justifyContent: 'center', 
-                     cursor: 'pointer', 
-                     zIndex: 20, 
-                     transition: 'all 0.2s',
-                     backdropFilter: 'blur(4px)'
-                   }}
-                 >
-                    <img 
-                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'%3E%3C/line%3E%3Cline x1='6' y1='6' x2='18' y2='18'%3E%3C/line%3E%3C/svg%3E" 
-                      width="24" 
-                      height="24" 
-                      alt="X"
-                    />                 </button>
-               </div>
-               
-               <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-card)', marginTop: '-50px', border: '4px solid var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 10 }}>
-                 {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (recipient?.username?.[0]?.toUpperCase() || "S")}
-               </div>
-               
-               <div style={{ padding: '20px 30px 30px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Header Banner */}
+              <div style={{ width: '100%', height: '120px', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', position: 'relative' }}>
+                <button
+                  onClick={() => setShowProfile(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    color: 'white',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 20,
+                    transition: 'all 0.2s',
+                    backdropFilter: 'blur(4px)'
+                  }}
+                >
+                  <img
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'%3E%3C/line%3E%3Cline x1='6' y1='6' x2='18' y2='18'%3E%3C/line%3E%3C/svg%3E"
+                    width="24"
+                    height="24"
+                    alt="X"
+                  />                 </button>
+              </div>
 
-               
-               <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
-               <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
-                 {recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online"}
-               </p>
-               
-               <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '15px', width: '100%', marginBottom: '20px' }}>
-                 <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Bio</h4>
-                 <p style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center' }}>
-                   {recipient?.bio || (recipient?.status && recipient.status !== 'online' && recipient.status !== 'offline' ? recipient.status : "No bio available.")}
-                 </p>
-               </div>
-               
-               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
-                 <Shield size={16} /> 
-                 <span>End-to-End Encrypted</span>
-               </div>
-               </div>
+              <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-card)', marginTop: '-50px', border: '4px solid var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 10 }}>
+                {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (recipient?.username?.[0]?.toUpperCase() || "S")}
+              </div>
+
+              <div style={{ padding: '20px 30px 30px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+
+                <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
+                <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
+                  {recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online"}
+                </p>
+
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '15px', width: '100%', marginBottom: '20px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Bio</h4>
+                  <p style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center' }}>
+                    {recipient?.bio || (recipient?.status && recipient.status !== 'online' && recipient.status !== 'offline' ? recipient.status : "No bio available.")}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <Shield size={16} />
+                  <span>End-to-End Encrypted</span>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
@@ -1131,54 +1113,54 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       {/* MEDIA LIGHTBOX */}
       <AnimatePresence>
         {lightboxUrl && createPortal(
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="lightbox-overlay"
             onClick={() => setLightboxUrl(null)}
-            style={{ 
-              position: 'fixed', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              background: 'rgba(0,0,0,0.95)', 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.95)',
               backdropFilter: 'blur(15px)',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               zIndex: 9999,
               padding: '40px'
             }}
           >
-            <motion.img 
+            <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              src={lightboxUrl} 
-              alt="Fullscreen" 
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '100%', 
+              src={lightboxUrl}
+              alt="Fullscreen"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
                 borderRadius: '12px',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
                 objectFit: 'contain'
-              }} 
+              }}
             />
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
-              style={{ 
-                position: 'absolute', 
-                top: '20px', 
-                right: '20px', 
-                background: 'rgba(255,255,255,0.1)', 
-                border: 'none', 
-                color: 'white', 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%', 
-                display: 'flex', 
-                alignItems: 'center', 
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: 'white',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer'
               }}
