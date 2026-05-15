@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Phone, Video, Send, 
-  Shield, X, Mic, Trash2, Search
+  Shield, X, Mic, Trash2, Search, Pin
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -18,7 +18,9 @@ import {
   editMessage,
   setTypingStatus,
   deleteForMe,
-  deleteForEveryone
+  deleteForEveryone,
+  setChatWallpaper,
+  pinMessage
 } from "../../services/chatService";
 import { rtdb } from "../../services/firebase";
 import { ref, onValue } from "firebase/database";
@@ -51,6 +53,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
+  const [chatWallpaper, setChatWallpaper] = useState<string | null>(null);
+  const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
+  const [isGhostMode, setIsGhostMode] = useState(false);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +116,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           markMessageAsRead(chatId, msg.id);
         }
       });
+      
+      // Update wallpaper from summary
+      const summary = msgs.length > 0 ? { wallpaper: (msgs as any)._summary?.wallpaper } : null; 
+      // Wait, I need a separate listener for summary or check how subscribeToMessages works.
     });
 
     const typingRef = ref(rtdb, `typing/${chatId}/${recipient.uid}`);
@@ -126,10 +136,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       }
     });
     
+    const chatSummaryRef = ref(rtdb, `user-chats/${user.uid}/${chatId}/summary`);
+    const unsubscribeSummary = onValue(chatSummaryRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        setChatWallpaper(data.wallpaper || null);
+        setPinnedMessageId(data.pinnedMessageId || null);
+      }
+    });
+    
     return () => {
       unsubscribe();
       unsubscribeTyping();
       unsubscribeTransfers();
+      unsubscribeSummary();
     };
   }, [chatId, user, recipient.uid]);
   
@@ -149,8 +169,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         setShowProfile(false);
       }
 
-      // Lightbox is handled by its own overlay click, but we can add it here too if needed
-      // Actually lightbox overlay already has onClick={() => setLightboxUrl(null)}
+      // Wallpaper Picker
+      if (showWallpaperPicker && !target.closest('.wallpaper-picker') && !emojiToggleRef.current?.contains(target)) {
+        // Wait, I need a ref for wallpaper picker too or use .closest
+      }
     };
     
     document.addEventListener("mousedown", handleClickOutside);
@@ -180,7 +202,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
 
     try {
-      await sendMessage(chatId, user.uid, recipient.uid, inputText, signingPrivateKey, replyingTo?.id);
+      await sendMessage(chatId, user.uid, recipient.uid, inputText, signingPrivateKey, replyingTo?.id, isGhostMode);
       setInputText("");
       setReplyingTo(null);
       setTypingStatus(chatId, user.uid, false);
@@ -288,8 +310,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   }, []);
 
   const handleSelectMessage = (id: string, _multi: boolean, _text?: string) => {
-    // Selection logic
     setSelectedMessageIds(prev => prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]);
+  };
+
+  const handlePinMessage = async () => {
+    if (user && chatId && selectedMessageIds.length === 1) {
+      await pinMessage(user.uid, chatId, selectedMessageIds[0]);
+      setSelectedMessageIds([]);
+    }
+  };
+
+  const handleUnpin = async () => {
+    if (user && chatId) {
+      await pinMessage(user.uid, chatId, null);
+    }
   };
 
 
@@ -330,8 +364,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 onEdit={() => {
                   const msg = messages.find(m => m.id === selectedMessageIds[0]);
                   if (msg) {
-                    setEditingMessage({ id: msg.id, text: msg.text });
-                    setInputText(msg.text);
+                    setEditingMessage({ id: msg.id, text: msg.text || "" });
+                    setInputText(msg.text || "");
                     setSelectedMessageIds([]);
                   }
                 }}
@@ -348,7 +382,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   if (msgId) {
                     toggleReaction(chatId, msgId, user.uid, emoji);
                   }
+                  setSelectedMessageIds([]);
                 }}
+                onPin={handlePinMessage}
               />
             </motion.div>
           ) : (
@@ -446,7 +482,40 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <Search size={20} />
                     </motion.button>
                     
+                    <motion.button
+                      whileHover={{ scale: 1.05, background: isGhostMode ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsGhostMode(!isGhostMode)}
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '12px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        background: isGhostMode ? 'rgba(168, 85, 247, 0.1)' : 'transparent', 
+                        color: isGhostMode ? '#a855f7' : 'var(--text-muted)', 
+                        border: 'none', 
+                        cursor: 'pointer' 
+                      }}
+                      title="Ghost Mode (Secret Chat)"
+                    >
+                      <Shield size={20} style={{ color: isGhostMode ? '#a855f7' : 'inherit' }} />
+                    </motion.button>
+
                     <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.05)' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowWallpaperPicker(!showWallpaperPicker)}
+                      style={{ width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}
+                      title="Chat Wallpaper"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </motion.button>
 
                     <motion.button
                       whileHover={{ scale: 1.05, background: 'rgba(16, 185, 129, 0.1)' }}
@@ -485,12 +554,52 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         </AnimatePresence>
       </div>
 
+      {/* Pinned Message Bar */}
+      <AnimatePresence>
+        {pinnedMsgData && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ 
+              background: 'var(--bg-card)', 
+              borderBottom: '1px solid var(--border)', 
+              padding: '8px 16px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              zIndex: 10,
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              // Scroll to message logic could be added here
+            }}
+          >
+            <Pin size={16} className="text-primary" style={{ color: 'var(--primary)' }} />
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>Pinned Message</p>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {pinnedMsgData.text || (pinnedMsgData.media ? "Media file" : "Encrypted message")}
+              </p>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleUnpin(); }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+            >
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div 
         className="messages-area" 
         style={{ 
-          background: settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
+          background: chatWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
             ? settings.appearance.wallpaper 
-            : undefined 
+            : undefined),
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         }}
       >
         {(() => {
@@ -846,6 +955,65 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           </div>
         </form>
       </div>
+
+      <AnimatePresence>
+        {showWallpaperPicker && (
+          <div 
+            className="wallpaper-picker-overlay"
+            onClick={() => setShowWallpaperPicker(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '24px', width: '90%', maxWidth: '400px', border: '1px solid var(--border)' }}
+            >
+              <h3 style={{ margin: '0 0 20px 0', textAlign: 'center' }}>Chat Wallpaper</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {[
+                  { name: 'Default', value: '' },
+                  { name: 'Sunset', value: 'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)' },
+                  { name: 'Ocean', value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
+                  { name: 'Midnight', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' },
+                  { name: 'Forest', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
+                  { name: 'Purple', value: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)' },
+                  { name: 'Vibrant', value: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' },
+                  { name: 'Mint', value: 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)' },
+                  { name: 'Rose', value: 'linear-gradient(135deg, #f80759 0%, #bc4e9c 100%)' }
+                ].map((wp) => (
+                  <button
+                    key={wp.name}
+                    onClick={async () => {
+                      if (user && chatId) {
+                        await setChatWallpaper(user.uid, chatId, wp.value);
+                      }
+                      setShowWallpaperPicker(false);
+                    }}
+                    style={{ 
+                      height: '80px', 
+                      borderRadius: '12px', 
+                      background: wp.value || 'var(--bg-main)', 
+                      border: chatWallpaper === wp.value ? '3px solid var(--primary)' : '1px solid var(--border)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    {wp.name}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showProfile && (

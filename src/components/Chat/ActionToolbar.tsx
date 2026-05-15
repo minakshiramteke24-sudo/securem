@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, Edit2, Copy, Check, UserMinus, Reply } from 'lucide-react';
+import { X, Trash2, Edit2, Copy, Check, UserMinus, Reply, Pin } from 'lucide-react';
 
 interface ActionToolbarProps {
   selectedCount: number;
@@ -12,6 +12,7 @@ interface ActionToolbarProps {
   canDeleteForEveryone: boolean;
   onReply?: () => void;
   onReact?: (emoji: string) => void;
+  onPin?: () => void;
 }
 
 const ActionToolbar: React.FC<ActionToolbarProps> = ({
@@ -24,7 +25,8 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
   canEdit,
   canDeleteForEveryone,
   onReply,
-  onReact
+  onReact,
+  onPin
 }) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -77,6 +79,12 @@ const ActionToolbar: React.FC<ActionToolbarProps> = ({
         {selectedCount === 1 && onReply && (
           <button onClick={onReply} title="Reply" style={{ background: "transparent", color: "var(--text-main)" }}>
             <Reply size={20} />
+          </button>
+        )}
+
+        {selectedCount === 1 && onPin && (
+          <button onClick={onPin} title="Pin Message" style={{ background: "transparent", color: "var(--text-main)" }}>
+            <Pin size={20} />
           </button>
         )}
         

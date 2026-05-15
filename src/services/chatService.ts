@@ -165,7 +165,8 @@ export const sendMessage = async (
   recipientId: string,
   text: string,
   signingPrivateKey: CryptoKey,
-  replyTo?: string
+  replyTo?: string,
+  isGhost: boolean = false
 ) => {
   try {
     const [senderProfile, recipientProfile] = await Promise.all([
@@ -203,7 +204,8 @@ export const sendMessage = async (
       wrappedKeys: { 
         [senderId]: wrappedKeySender, 
         [recipientId]: wrappedKeyRecipient 
-      }
+      },
+      isGhost
     };
 
     if (replyTo) {
@@ -693,6 +695,22 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
       
     callback(validChats);
   });
+};
+
+export const setChatWallpaper = async (uid: string, chatId: string, wallpaper: string) => {
+  try {
+    await update(ref(rtdb, `user-chats/${uid}/${chatId}/summary`), { wallpaper });
+  } catch (err) {
+    console.error("[ChatService] Failed to set wallpaper:", err);
+  }
+};
+
+export const pinMessage = async (uid: string, chatId: string, messageId: string | null) => {
+  try {
+    await update(ref(rtdb, `user-chats/${uid}/${chatId}/summary`), { pinnedMessageId: messageId });
+  } catch (err) {
+    console.error("[ChatService] Failed to pin message:", err);
+  }
 };
 
 export const markAsRead = async (chatId: string, uid: string) => {
