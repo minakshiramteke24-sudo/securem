@@ -354,6 +354,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="chat-window"
+      style={{
+        backgroundImage: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
+          ? settings.appearance.wallpaper
+          : 'none'),
+        backgroundSize: activeWallpaper ? wpSize : 'cover',
+        backgroundPosition: activeWallpaper ? wpPosition : 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+        backgroundColor: 'var(--bg-dark)'
+      }}
     >
       <div className="chat-top-bar">
         <AnimatePresence mode="wait">
@@ -596,13 +606,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       <div
         className="messages-area"
         style={{
-          backgroundImage: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
-            ? settings.appearance.wallpaper
-            : 'none'),
-          backgroundSize: activeWallpaper ? wpSize : 'cover',
-          backgroundPosition: activeWallpaper ? wpPosition : 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundColor: 'var(--bg-dark)'
+          background: 'transparent',
+          flex: 1,
+          overflowY: 'auto'
         }}
       >
         {(() => {
