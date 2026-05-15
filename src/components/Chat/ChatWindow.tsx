@@ -54,7 +54,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
-  const [chatWallpaper, setChatWallpaper] = useState<string | null>(null);
+  const [activeWallpaper, setActiveWallpaper] = useState<string | null>(null);
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(false);
   
@@ -140,7 +140,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     const unsubscribeSummary = onValue(chatSummaryRef, (snap) => {
       if (snap.exists()) {
         const data = snap.val();
-        setChatWallpaper(data.wallpaper || null);
+        setActiveWallpaper(data.wallpaper || null);
         setPinnedMessageId(data.pinnedMessageId || null);
       }
     });
@@ -170,8 +170,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       }
 
       // Wallpaper Picker
-      if (showWallpaperPicker && !target.closest('.wallpaper-picker') && !emojiToggleRef.current?.contains(target)) {
-        // Wait, I need a ref for wallpaper picker too or use .closest
+      if (showWallpaperPicker && target instanceof HTMLElement && !target.closest('.wallpaper-picker-overlay') && !emojiToggleRef.current?.contains(target)) {
+        setShowWallpaperPicker(false);
       }
     };
     
@@ -325,6 +325,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       await pinMessage(user.uid, chatId, null);
     }
   };
+
+  const pinnedMsgData = pinnedMessageId ? messages.find(m => m.id === pinnedMessageId) : null;
 
 
   return (
@@ -595,7 +597,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       <div 
         className="messages-area" 
         style={{ 
-          background: chatWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
+          background: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
             ? settings.appearance.wallpaper 
             : undefined),
           backgroundSize: 'cover',
