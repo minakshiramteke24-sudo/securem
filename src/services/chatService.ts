@@ -61,6 +61,9 @@ export interface Message {
 
 const getChatId = (uid1: string, uid2: string) => [uid1, uid2].sort().join("_");
 
+// Performance Optimization: Cache for recipient profiles to speed up sidebar loading
+const profileCache = new Map<string, any>();
+
 /**
  * SEQUENTIAL HANDSHAKE: Get or Create Chat
  */
@@ -578,7 +581,7 @@ export const toggleReaction = async (chatId: string, messageId: string, uid: str
 };
 
 export const subscribeToMessages = (chatId: string, uid: string, callback: (messages: Message[]) => void) => {
-  const q = query(ref(rtdb, `messages/${chatId}`), limitToLast(100));
+  const q = query(ref(rtdb, `messages/${chatId}`), limitToLast(40)); // Reduced for faster initial load
   return onValue(q, (snapshot) => {
     const messages: Message[] = [];
     snapshot.forEach((child) => {
@@ -613,7 +616,13 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
         if (!recipientId) return null;
         
         try {
-          const recipient = await getUserProfile(recipientId);
+          // Use cache if available to avoid redundant DB hits
+          let recipient = profileCache.get(recipientId);
+          if (!recipient) {
+            recipient = await getUserProfile(recipientId);
+            if (recipient) profileCache.set(recipientId, recipient);
+          }
+          
           if (!recipient) return null;
           
           return { 

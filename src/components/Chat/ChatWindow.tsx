@@ -68,13 +68,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const profileCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const initChat = async () => {
-      if (user && recipient) {
-        const id = await getOrCreateChat(user.uid, recipient.uid);
-        setChatId(id);
-      }
-    };
-    initChat();
+    if (user && recipient) {
+      // Deterministic ID allows instant subscription without waiting for DB
+      const id = [user.uid, recipient.uid].sort().join("_");
+      setChatId(id);
+      
+      // Ensure metadata and Sequential Handshake happens in background
+      getOrCreateChat(user.uid, recipient.uid);
+    }
   }, [user, recipient]);
 
   useEffect(() => {
