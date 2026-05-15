@@ -23,7 +23,7 @@ import {
   pinMessage
 } from "../../services/chatService";
 import { rtdb } from "../../services/firebase";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, get } from "firebase/database";
 import MessageBubble from "./MessageBubble";
 import ActionToolbar from "./ActionToolbar";
 import { prepareEncryptedFile } from "../../services/mediaService";
@@ -56,6 +56,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
   const [activeWallpaper, setActiveWallpaper] = useState<string | null>(null);
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
+  const [pinnedMsgData, setPinnedMsgData] = useState<any | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(false);
   
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -324,7 +325,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
   };
 
-  const pinnedMsgData = pinnedMessageId ? messages.find(m => m.id === pinnedMessageId) : null;
+  // Fetch pinned message if not in current messages list
+  useEffect(() => {
+    if (pinnedMessageId && !messages.find(m => m.id === pinnedMessageId)) {
+      const msgRef = ref(rtdb, `messages/${chatId}/${pinnedMessageId}`);
+      get(msgRef).then(snap => {
+        if (snap.exists()) setPinnedMsgData(snap.val());
+      });
+    } else if (pinnedMessageId) {
+      setPinnedMsgData(messages.find(m => m.id === pinnedMessageId));
+    } else {
+      setPinnedMsgData(null);
+    }
+  }, [pinnedMessageId, messages, chatId]);
 
 
   return (
@@ -395,14 +408,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               style={{ 
                 padding: '0 1.5rem', 
                 height: '72px', 
-                borderBottom: '1px solid var(--border)', 
-                background: 'rgba(var(--bg-card-rgb), 0.8)', 
+                borderBottom: `1px solid ${isGhostMode ? 'rgba(168, 85, 247, 0.3)' : 'var(--border)'}`, 
+                background: isGhostMode ? 'rgba(20, 10, 40, 0.95)' : 'rgba(var(--bg-card-rgb), 0.8)', 
                 backdropFilter: 'blur(12px)', 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'space-between',
                 position: 'relative',
-                zIndex: 100
+                zIndex: 100,
+                boxShadow: isGhostMode ? '0 4px 20px rgba(168, 85, 247, 0.15)' : 'none'
               }}
             >
               {isSearching ? (
@@ -595,11 +609,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       <div 
         className="messages-area" 
         style={{ 
-          background: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
-            ? settings.appearance.wallpaper 
+          background: activeWallpaper ? `${activeWallpaper} !important` : (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default' 
+            ? `${settings.appearance.wallpaper} !important` 
             : undefined),
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundSize: 'cover !important',
+          backgroundPosition: 'center !important'
         }}
       >
         {(() => {
@@ -724,11 +738,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="chat-input-container glass"
           style={{ 
-            background: 'var(--bg-card)', 
+            background: isGhostMode ? 'rgba(30, 20, 60, 0.9)' : 'var(--bg-card)', 
             borderRadius: '24px', 
             padding: '8px 12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            border: '1px solid var(--glass-border)',
+            boxShadow: isGhostMode ? '0 8px 32px rgba(168, 85, 247, 0.2)' : '0 8px 32px rgba(0,0,0,0.2)',
+            border: `1px solid ${isGhostMode ? 'rgba(168, 85, 247, 0.4)' : 'var(--glass-border)'}`,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
