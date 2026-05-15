@@ -19,6 +19,7 @@ import {
   setTypingStatus,
   deleteForMe,
   deleteForEveryone,
+  setChatWallpaper,
   pinMessage
 } from "../../services/chatService";
 import { rtdb } from "../../services/firebase";
