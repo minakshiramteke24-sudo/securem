@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Phone, Video, Send,
-  Shield, X, Mic, Trash2, Search, Pin
+  X, Mic, Trash2, Search, Pin
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -58,13 +58,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [wpPosition, setWpPosition] = useState("center");
   const [wpSize, setWpSize] = useState("cover");
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
-  const [isGhostMode, setIsGhostMode] = useState(settings?.privacy?.stealthMode || false);
   const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
   const [wallpaperZoom, setWallpaperZoom] = useState(150);
-
-  useEffect(() => {
-    setIsGhostMode(settings?.privacy?.stealthMode || false);
-  }, [settings?.privacy?.stealthMode]);
   const [wallpaperPos, setWallpaperPos] = useState({ x: 50, y: 50 });
   const [isDraggingWp, setIsDraggingWp] = useState(false);
   const wpAdjustRef = useRef<HTMLDivElement>(null);
@@ -507,36 +502,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       style={{ width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}
                     >
                       <Search size={20} />
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05, background: isGhostMode ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.05)' }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={async () => {
-                        const newState = !isGhostMode;
-                        setIsGhostMode(newState);
-                        if (user) {
-                          // Deep path update to avoid spreading settings and causing races
-                          const settingsPath = `users/${user.uid}/settings/privacy/stealthMode`;
-                          await set(ref(rtdb, settingsPath), newState);
-                        }
-                      }}
-                      className={`toolbar-btn ${isGhostMode ? 'active ghost' : ''}`}
-                      title={isGhostMode ? "Ghost Mode Active" : "Go Invisible"}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: isGhostMode ? 'rgba(168, 85, 247, 0.1)' : 'transparent',
-                        color: isGhostMode ? '#a855f7' : 'var(--text-muted)',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Shield size={20} style={{ color: isGhostMode ? '#a855f7' : 'inherit' }} />
                     </motion.button>
 
                     <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />

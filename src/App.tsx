@@ -108,23 +108,16 @@ const App: React.FC = () => {
     document.documentElement.setAttribute('data-font-size', settings.appearance.fontSize);
   }, [settings.appearance.theme, settings.appearance.glassmorphism, settings.appearance.fontSize]);
 
-  // Presence System (Stealth Mode)
+  // Presence System
   useEffect(() => {
     if (!user) return;
     const statusRef = ref(rtdb, `users/${user.uid}/status`);
     const lastSeenRef = ref(rtdb, `users/${user.uid}/lastSeen`);
 
-    if (settings?.privacy?.stealthMode) {
-      set(statusRef, "offline");
-      set(lastSeenRef, serverTimestamp());
-      onDisconnect(statusRef).cancel();
-      onDisconnect(lastSeenRef).cancel();
-    } else {
-      set(statusRef, "online");
-      onDisconnect(statusRef).set("offline");
-      onDisconnect(lastSeenRef).set(serverTimestamp());
-    }
-  }, [user, settings?.privacy?.stealthMode]);
+    set(statusRef, "online");
+    onDisconnect(statusRef).set("offline");
+    onDisconnect(lastSeenRef).set(serverTimestamp());
+  }, [user]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();

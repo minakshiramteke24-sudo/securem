@@ -9,7 +9,6 @@ export interface UserSettings {
     profilePhoto: 'everyone' | 'contacts' | 'nobody';
     readReceipts: boolean;
     typingIndicators: boolean;
-    stealthMode?: boolean;
   };
   appearance: {
     theme: 'dark' | 'light' | 'system';
@@ -37,7 +36,6 @@ export const defaultSettings: UserSettings = {
     profilePhoto: 'everyone',
     readReceipts: true,
     typingIndicators: true,
-    stealthMode: false,
   },
   appearance: {
     theme: 'dark',

@@ -220,20 +220,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
             {activeTab === 'privacy' && (
               <div className="settings-section">
                 <div className="settings-list">
-                  <div className="list-item toggle">
-                    <div className="item-info">
-                      <p className="title">Stealth Mode</p>
-                      <p className="desc">Hide your online status and last seen from everyone</p>
-                    </div>
-                    <label className="switch">
-                      <input 
-                        type="checkbox" 
-                        checked={settings.privacy.stealthMode || false} 
-                        onChange={e => handleTogglePrivacy('stealthMode' as any, e.target.checked)} 
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
 
                   <div className="list-item">
                     <div className="item-info">
@@ -241,7 +227,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onClose }) => {
                       <p className="desc">Who can see when you were last online</p>
                     </div>
                     <select 
-                      disabled={settings.privacy.stealthMode}
                       value={settings.privacy.lastSeen} 
                       onChange={e => handleTogglePrivacy('lastSeen', e.target.value)}
                     >
