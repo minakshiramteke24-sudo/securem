@@ -75,21 +75,31 @@ export const getOrCreateChat = async (uid1: string, uid2: string): Promise<strin
     const snapshot = await get(chatRef);
 
     if (!snapshot.exists()) {
-      console.log(`[ChatService] ATOMIC HANDSHAKE: Creating master record and links for ${chatId}`);
+      const [p1, p2] = await Promise.all([getUserProfile(uid1), getUserProfile(uid2)]);
       
-      const timestamp = serverTimestamp();
-      const chatData = {
+      await set(chatRef, {
         id: chatId,
         participants: { [uid1]: true, [uid2]: true },
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
-
-      // ATOMIC MULTIPATH UPDATE: Ensures chat record and user links exist simultaneously
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      
+      // Denormalized summaries for instant loading
       const updates: any = {};
-      updates[`chats/${chatId}`] = chatData;
-      updates[`user-chats/${uid1}/${chatId}`] = { active: true, summary: { recipientId: uid2, updatedAt: timestamp } };
-      updates[`user-chats/${uid2}/${chatId}`] = { active: true, summary: { recipientId: uid1, updatedAt: timestamp } };
+      updates[`user-chats/${uid1}/${chatId}/summary`] = { 
+        recipientId: uid2, 
+        recipientName: p2?.username || "Secure User",
+        recipientAvatar: p2?.avatar || null,
+        active: true,
+        updatedAt: serverTimestamp() 
+      };
+      updates[`user-chats/${uid2}/${chatId}/summary`] = { 
+        recipientId: uid1, 
+        recipientName: p1?.username || "Secure User",
+        recipientAvatar: p1?.avatar || null,
+        active: true,
+        updatedAt: serverTimestamp() 
+      };
       
       await update(ref(rtdb), updates);
     } else {
@@ -208,13 +218,30 @@ export const sendMessage = async (
       updatedAt: timestamp
     };
 
-    // Step 2: Update Summaries (Best effort)
+    // Step 2: Update Summaries (Denormalized for Speed)
     try {
       const updates: any = {};
-      updates[`user-chats/${senderId}/${chatId}/summary`] = { ...summary, recipientId, isUnread: false };
+      
+      // Update Sender's view (recipient info)
+      updates[`user-chats/${senderId}/${chatId}/summary`] = { 
+        ...summary, 
+        recipientId, 
+        recipientName: recipientProfile.username,
+        recipientAvatar: recipientProfile.avatar || null,
+        isUnread: false 
+      };
       updates[`user-chats/${senderId}/${chatId}/active`] = true;
-      updates[`user-chats/${recipientId}/${chatId}/summary`] = { ...summary, recipientId: senderId, isUnread: true };
+      
+      // Update Recipient's view (sender info)
+      updates[`user-chats/${recipientId}/${chatId}/summary`] = { 
+        ...summary, 
+        recipientId: senderId, 
+        recipientName: senderProfile.username,
+        recipientAvatar: senderProfile.avatar || null,
+        isUnread: true 
+      };
       updates[`user-chats/${recipientId}/${chatId}/active`] = true;
+      
       updates[`chats/${chatId}/updatedAt`] = timestamp;
       updates[`chats/${chatId}/lastMessage`] = "Encrypted message";
       
@@ -581,7 +608,7 @@ export const toggleReaction = async (chatId: string, messageId: string, uid: str
 };
 
 export const subscribeToMessages = (chatId: string, uid: string, callback: (messages: Message[]) => void) => {
-  const q = query(ref(rtdb, `messages/${chatId}`), limitToLast(40)); // Reduced for faster initial load
+  const q = query(ref(rtdb, `messages/${chatId}`), limitToLast(20)); // Super fast initial load
   return onValue(q, (snapshot) => {
     const messages: Message[] = [];
     snapshot.forEach((child) => {
@@ -607,7 +634,23 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
         const summary = info.summary || {};
         let recipientId = summary.recipientId;
         
-        // Robust fallback: if recipientId is missing, try to derive it from chatId
+        // Optimization: If we have denormalized info, use it immediately
+        if (summary.recipientName) {
+          return {
+            id: chatId,
+            ...summary,
+            recipient: {
+              uid: recipientId,
+              username: summary.recipientName,
+              avatar: summary.recipientAvatar
+            },
+            isUnread: summary.isUnread || false,
+            isPinned: summary.isPinned || false,
+            updatedAt: summary.updatedAt || info.updatedAt || 0
+          };
+        }
+
+        // Fallback for older chats without denormalized info
         if (!recipientId && chatId.includes('_')) {
           const parts = chatId.split('_');
           recipientId = parts.find(id => id !== uid);
