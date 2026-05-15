@@ -22,6 +22,12 @@ import {
   setChatWallpaper,
   pinMessage
 } from "../../services/chatService";
+import { 
+  updateUserProfile, 
+  getUserProfile, 
+  setUserPresence,
+  updateUserStatus 
+} from "../../services/userService";
 import { rtdb } from "../../services/firebase";
 import { ref, onValue } from "firebase/database";
 import MessageBubble from "./MessageBubble";
@@ -59,6 +65,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
   const [wallpaperZoom, setWallpaperZoom] = useState(100);
+
+  // Stealth Mode Effect: When on, appear offline to others
+  useEffect(() => {
+    if (!user) return;
+    if (isGhostMode) {
+      updateUserStatus(user.uid, "offline");
+    } else {
+      updateUserStatus(user.uid, "online");
+    }
+  }, [isGhostMode, user]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

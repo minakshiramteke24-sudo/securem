@@ -115,3 +115,8 @@ export const setUserPresence = (uid: string) => {
   onDisconnect(statusRef).set("offline");
   onDisconnect(lastSeenRef).set(serverTimestamp());
 };
+
+export const updateUserStatus = async (uid: string, status: string) => {
+  const statusRef = ref(rtdb, `users/${uid}/status`);
+  await set(statusRef, status);
+};
