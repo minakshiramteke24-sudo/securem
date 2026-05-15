@@ -517,6 +517,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <Shield size={20} style={{ color: isGhostMode ? '#a855f7' : 'inherit' }} />
                     </motion.button>
 
+                    {isGhostMode && (
+                      <motion.button
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        whileHover={{ scale: 1.05, background: 'rgba(239, 68, 68, 0.1)' }}
+                        onClick={async () => {
+                          if (window.confirm("Purge all Ghost messages from this session?")) {
+                            // Logic to delete ghost messages
+                            const ghostMsgs = messages.filter(m => m.isGhost);
+                            for (const msg of ghostMsgs) {
+                              await deleteForEveryone(chatId!, msg.id, user!.uid);
+                            }
+                          }
+                        }}
+                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}
+                      >
+                        PURGE GHOST
+                      </motion.button>
+                    )}
+
                     <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
                     
                     <motion.button
@@ -1001,6 +1021,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                     key={wp.name}
                     onClick={async () => {
                       if (user && chatId) {
+                        setActiveWallpaper(wp.value); // Local update for instant feedback
                         await setChatWallpaper(user.uid, chatId, wp.value);
                       }
                       setShowWallpaperPicker(false);
