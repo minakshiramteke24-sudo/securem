@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ArrowLeft, Phone, Video, Send, Paperclip, 
-  Shield, Smile, X, Mic, Trash2, Search
+  ArrowLeft, Phone, Video, Send, 
+  Shield, X, Mic, Trash2, Search
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
