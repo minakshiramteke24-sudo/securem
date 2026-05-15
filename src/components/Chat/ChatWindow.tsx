@@ -418,8 +418,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 padding: '0 1.5rem',
                 height: '72px',
                 borderBottom: '1px solid var(--border)',
-                background: 'rgba(var(--bg-card-rgb), 0.8)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(0, 0, 0, 0.2)',
+                backdropFilter: 'blur(25px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -727,14 +727,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="chat-input-container glass"
           style={{
-            background: 'var(--bg-card)',
+            background: 'rgba(0, 0, 0, 0.2)',
             borderRadius: '24px',
             padding: '8px 12px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            border: '1px solid var(--glass-border)',
+            border: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            backdropFilter: 'blur(20px)'
           }}
         >
           <button
