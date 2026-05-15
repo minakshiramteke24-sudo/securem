@@ -203,8 +203,7 @@ export const sendMessage = async (
       wrappedKeys: { 
         [senderId]: wrappedKeySender, 
         [recipientId]: wrappedKeyRecipient 
-      },
-      isGhost
+      }
     };
 
     if (replyTo) {

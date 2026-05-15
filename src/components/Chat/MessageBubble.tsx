@@ -5,7 +5,7 @@ import { type UserProfile } from "../../services/userService";
 import { useCrypto } from "../../context/CryptoContext";
 import { useAuth } from "../../context/AuthContext";
 import { unwrapAESKey, decryptMessage, importSigningPublicKey, verifyData } from "../../services/cryptoService";
-import { Shield, ShieldCheck, CheckCircle2, FileText, Download, Check, CheckCheck, Ghost } from "lucide-react";
+import { Shield, ShieldCheck, CheckCircle2, FileText, Download, Check, CheckCheck } from "lucide-react";
 import { decryptBase64File } from "../../services/mediaService";
 
 interface MessageBubbleProps {
@@ -491,7 +491,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   )}
                 </div>
               )}
-              {message.isGhost && <Ghost size={10} style={{ color: "#a855f7" }} />}
               <span style={{ opacity: 0.5 }}>•</span>
               <span>{formatTime(message.timestamp)}</span>
             </div>
@@ -566,7 +565,6 @@ export default React.memo(MessageBubble, (prev, next) => {
     prev.message.signature === next.message.signature &&
     prev.message.deleted === next.message.deleted &&
     prev.message.read === next.message.read &&
-    prev.message.isGhost === next.message.isGhost &&
     prev.message.edited === next.message.edited &&
     JSON.stringify(prev.message.reactions) === JSON.stringify(next.message.reactions) &&
     prev.isSelected === next.isSelected &&
