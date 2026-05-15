@@ -452,22 +452,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <div className="avatar" style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'white', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                         {recipient?.avatar ? <img src={recipient.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>{recipient?.username?.[0]?.toUpperCase()}</span>}
                       </div>
-                      {recipient?.status === 'online' && (
+                      {recipient?.status === 'online' && !isGhostMode && (
                         <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '12px', height: '12px', borderRadius: '50%', background: '#10b981', border: '2px solid var(--bg-dark)' }} />
                       )}
                     </div>
 
                     <div className="header-info">
                       <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>{recipient?.username || "Secure User"}</h3>
-                      <p className="status-text" style={{ margin: 0, fontSize: '0.75rem', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {recipient?.status === 'online' && (
+                      <p className="status-text" style={{ margin: 0, fontSize: '0.75rem', color: (recipient?.status === 'online' && !isGhostMode) ? '#10b981' : 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {recipient?.status === 'online' && !isGhostMode && (
                           <motion.span
                             animate={{ opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 2 }}
                             style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}
                           />
                         )}
-                        {recipientTyping ? "typing..." : (recipient?.status === 'online' ? "Active now" : (recipient?.status === 'offline' ? "Offline" : recipient?.status || "Click for profile"))}
+                        {recipientTyping ? "typing..." : (isGhostMode ? "Offline" : (recipient?.status === 'online' ? "Active now" : (recipient?.status === 'offline' ? "Offline" : recipient?.status || "Click for profile")))}
                       </p>
                     </div>
                   </div>
@@ -1088,8 +1088,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
 
                 <h2 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.5rem' }}>{recipient.username}</h2>
-                <p style={{ margin: '0 0 20px 0', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: recipient?.status === 'online' ? 600 : 400 }}>
-                  {recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online"}
+                <p style={{ margin: '0 0 20px 0', color: (recipient?.status === 'online' && !isGhostMode) ? '#10b981' : 'var(--text-muted)', fontSize: '0.9rem', fontWeight: (recipient?.status === 'online' && !isGhostMode) ? 600 : 400 }}>
+                  {isGhostMode ? "Offline" : (recipient?.status === 'online' || recipient?.status === 'offline' ? recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1) : "Online")}
                 </p>
 
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '12px', padding: '15px', width: '100%', marginBottom: '20px' }}>
