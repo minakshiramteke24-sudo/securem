@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { type User, onAuthStateChanged } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
 import { auth, rtdb } from "../services/firebase";
-import { type UserProfile, setUserPresence } from "../services/userService";
+import { type UserProfile } from "../services/userService";
 import { type UserSettings, defaultSettings } from "../services/settingsService";
 
 interface AuthContextType {
