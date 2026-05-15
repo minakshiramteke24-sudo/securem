@@ -645,11 +645,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       <div
         className="messages-area"
         style={{
-          background: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
+          backgroundImage: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
             ? settings.appearance.wallpaper
-            : undefined),
+            : 'none'),
           backgroundSize: activeWallpaper ? wpSize : 'cover',
-          backgroundPosition: activeWallpaper ? wpPosition : 'center'
+          backgroundPosition: activeWallpaper ? wpPosition : 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: 'var(--bg-dark)'
         }}
       >
         {(() => {
