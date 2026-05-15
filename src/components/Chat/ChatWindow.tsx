@@ -63,6 +63,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const prevMsgCount = useRef(0);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const emojiToggleRef = useRef<HTMLButtonElement>(null);
+  const profileCardRef = useRef<HTMLDivElement>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initChat = async () => {
@@ -128,6 +132,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       unsubscribeTransfers();
     };
   }, [chatId, user, recipient.uid]);
+  
+  // Generalized Click outside to close overlays
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      
+      // Emoji Picker
+      if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(target) &&
+          emojiToggleRef.current && !emojiToggleRef.current.contains(target)) {
+        setShowEmojiPicker(false);
+      }
+      
+      // Profile Modal
+      if (showProfile && profileCardRef.current && !profileCardRef.current.contains(target)) {
+        setShowProfile(false);
+      }
+
+      // Lightbox is handled by its own overlay click, but we can add it here too if needed
+      // Actually lightbox overlay already has onClick={() => setLightboxUrl(null)}
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showEmojiPicker, showProfile]);
 
   useEffect(() => {
     if (messages.length > prevMsgCount.current) {
@@ -527,6 +555,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         <AnimatePresence>
           {showEmojiPicker && (
             <motion.div 
+              ref={emojiPickerRef}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -592,6 +621,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           }}
         >
           <button
+            ref={emojiToggleRef}
             type="button"
             style={{ 
               background: 'rgba(255, 255, 255, 0.05)', 
@@ -820,6 +850,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           >
             <motion.div 
+              ref={profileCardRef}
               initial={{ scale: 0.9, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.9, opacity: 0 }}
