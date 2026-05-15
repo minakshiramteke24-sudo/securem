@@ -528,8 +528,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             style={{ 
               background: 'transparent', 
               color: '#ffffff', 
-              width: '40px', 
-              height: '40px', 
+              width: '42px', 
+              height: '42px', 
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -538,11 +538,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
-              opacity: 0.8
+              padding: 0
             }}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            title="Emojis"
           >
-            <Smile size={24} strokeWidth={2.5} />
+            <Smile size={24} strokeWidth={2.5} style={{ display: 'block', minWidth: '24px', minHeight: '24px' }} />
           </button>
 
           <button
@@ -550,8 +551,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             style={{ 
               background: 'transparent', 
               color: '#ffffff', 
-              width: '40px', 
-              height: '40px', 
+              width: '42px', 
+              height: '42px', 
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -560,7 +561,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
-              opacity: 0.8
+              padding: 0
             }}
             onClick={() => {
               const input = document.createElement('input');
@@ -568,8 +569,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               input.onchange = (e: any) => handleFileSelect(e);
               input.click();
             }}
+            title="Attach File"
           >
-            <Paperclip size={24} strokeWidth={2.5} />
+            <Paperclip size={24} strokeWidth={2.5} style={{ display: 'block', minWidth: '24px', minHeight: '24px' }} />
           </button>
 
           <AnimatePresence mode="wait">
@@ -772,7 +774,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                      backdropFilter: 'blur(4px)'
                    }}
                  >
-                   <X size={24} strokeWidth={3} color="#ffffff" />
+                    <X size={26} strokeWidth={2.5} style={{ display: 'block', color: 'white', minWidth: '26px', minHeight: '26px' }} />
                  </button>
                </div>
                
