@@ -213,10 +213,6 @@ export const sendMessage = async (
     // Step 1: Save the Message (Priority)
     await update(ref(rtdb, `messages/${chatId}/${messageId}`), messageData);
 
-    const summary = {
-      lastMessage: "Encrypted message",
-      updatedAt: timestamp
-    };
 
     // Step 2: Update Summaries (Denormalized for Speed)
     try {
@@ -294,10 +290,6 @@ export const sendMediaMessage = async (
       wrappedKeys: { [senderId]: wrappedKeySender, [recipientId]: wrappedKeyRecipient }
     });
 
-    const summary = {
-      lastMessage: `📷 ${fileMetadata.type.startsWith('image/') ? 'Photo' : 'File'}`,
-      updatedAt: timestamp
-    };
 
     const updates: any = {};
     const senderSummaryPath = `user-chats/${senderId}/${chatId}/summary`;
