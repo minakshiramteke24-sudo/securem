@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Phone, Video, Send,
-  X, Mic, Trash2, Search, Pin
+  Shield, X, Mic, Trash2, Search, Pin
 } from "lucide-react";
 import CustomEmojiPicker from "./CustomEmojiPicker";
 import { useAuth } from "../../context/AuthContext";
@@ -24,7 +24,7 @@ import {
   sendMediaMessage
 } from "../../services/chatService";
 import { rtdb } from "../../services/firebase";
-import { ref, onValue, set } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { transferService, type TransferSession } from "../../services/transferService";
 import MessageBubble from "./MessageBubble";
 import ActionToolbar from "./ActionToolbar";
@@ -222,7 +222,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     }
 
     try {
-      await sendMessage(chatId, user.uid, recipient.uid, inputText, signingPrivateKey, replyingTo?.id, isGhostMode);
+      await sendMessage(chatId, user.uid, recipient.uid, inputText, signingPrivateKey, replyingTo?.id);
       setInputText("");
       setReplyingTo(null);
       setTypingStatus(chatId, user.uid, false);

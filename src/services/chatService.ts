@@ -57,7 +57,6 @@ export interface Message {
   };
   hiddenFor?: { [uid: string]: boolean };
   read?: boolean;
-  isGhost?: boolean;
 }
 
 const getChatId = (uid1: string, uid2: string) => [uid1, uid2].sort().join("_");
@@ -166,8 +165,7 @@ export const sendMessage = async (
   recipientId: string,
   text: string,
   signingPrivateKey: CryptoKey,
-  replyTo?: string,
-  isGhost: boolean = false
+  replyTo?: string
 ) => {
   try {
     const [senderProfile, recipientProfile] = await Promise.all([
