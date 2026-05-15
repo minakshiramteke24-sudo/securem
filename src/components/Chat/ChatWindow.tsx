@@ -357,36 +357,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       style={{
         position: 'relative',
         backgroundColor: 'var(--bg-dark)',
+        backgroundImage: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
+          ? settings.appearance.wallpaper
+          : 'none'),
+        backgroundSize: activeWallpaper ? wpSize : 'cover',
+        backgroundPosition: activeWallpaper ? wpPosition : 'center',
+        backgroundRepeat: 'no-repeat',
         overflow: 'hidden'
       }}
     >
-      {/* Immersive Wallpaper Layer */}
-      {activeWallpaper && (
-        <div 
-          className="wallpaper-container"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            overflow: 'hidden'
-          }}
-        >
-          <img 
-            src={activeWallpaper.replace('url(', '').replace(')', '').replace(/['\"]/g, '')} 
-            alt="Background"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transform: `scale(${parseFloat(wpSize) / 100 || 1})`,
-              objectPosition: wpPosition || 'center',
-              filter: 'brightness(0.9)'
-            }}
-          />
-        </div>
-      )}
-
       <div className="chat-content-layer" style={{ 
         position: 'relative', 
         zIndex: 1, 
