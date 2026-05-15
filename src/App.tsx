@@ -16,6 +16,7 @@ import Sidebar from "./components/Chat/Sidebar";
 import ChatWindow from "./components/Chat/ChatWindow";
 const CallOverlay = lazy(() => import("./components/Chat/CallOverlay"));
 const SettingsPage = lazy(() => import("./components/Chat/SettingsPage"));
+const ReelsView = lazy(() => import("./components/Reels/ReelsView"));
 
 const LoadingSkeleton = () => (
   <motion.div 
@@ -86,7 +87,7 @@ const App: React.FC = () => {
   const { isUnlocked, unlock } = useCrypto();
   
   const [isLogin, setIsLogin] = useState(true);
-  const [view, setView] = useState<"app" | "privacy" | "terms" | "about" | "settings">("app");
+  const [view, setView] = useState<"app" | "privacy" | "terms" | "about" | "settings" | "reels">("app");
   const [selectedRecipient, setSelectedRecipient] = useState<UserProfile | null>(null);
   const [unlockPassword, setUnlockPassword] = useState("");
   const [unlockError, setUnlockError] = useState("");
@@ -270,6 +271,7 @@ const App: React.FC = () => {
           <Sidebar 
             onSelectChat={(_, recipient) => setSelectedRecipient(recipient)} 
             onShowSettings={() => setView("settings")}
+            onShowReels={() => setView("reels")}
             onInitiateCall={async (callData) => {
               const fullCallData = {
                 ...callData,
@@ -293,7 +295,18 @@ const App: React.FC = () => {
             }}
           />
           <AnimatePresence mode="wait">
-            {selectedRecipient ? (
+            {view === "reels" ? (
+              <motion.div
+                key="reels"
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+                style={{ flex: 1, height: "100%", overflow: "hidden" }}
+              >
+                <ReelsView onBack={() => setView("app")} />
+              </motion.div>
+            ) : selectedRecipient ? (
               <motion.div 
                 key={selectedRecipient.uid}
                 initial={{ opacity: 0, x: 10 }}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, MessageCircle, User as UserIcon, Check, 
-  Phone, Video, Eraser, UserMinus, Settings, LogOut
+  Phone, Video, Eraser, UserMinus, Settings, LogOut, Play
 } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
 import { searchUsers, type UserProfile } from "../../services/userService";
@@ -16,9 +16,10 @@ interface SidebarProps {
   onSelectChat: (chatId: string, recipient: UserProfile) => void;
   onInitiateCall: (callData: any) => void;
   onShowSettings: () => void;
+  onShowReels: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings, onShowReels }) => {
   const { user, profile } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const [stories, setStories] = useState<Story[]>([]);
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [isPostingStory, setIsPostingStory] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chats' | 'stories'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats' | 'stories' | 'reels'>('chats');
 
   // Menu states
   const [profileMenuOpen, setProfileMenuOpen] = useState<{ x: number, y: number } | null>(null);
@@ -239,6 +240,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
             alt="+"
           />
           <span>Stories</span>
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'reels' ? 'active' : ''}`}
+          onClick={() => onShowReels()}
+        >
+          <Play size={18} fill="currentColor" />
+          <span>Reels</span>
         </button>
         <div className={`tab-indicator ${activeTab}`} />
       </div>
@@ -636,7 +644,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           position: absolute;
           top: 8px;
           bottom: 8px;
-          width: calc(50% - 6px);
+          width: calc(33.33% - 6px);
           background: var(--primary);
           border-radius: 12px;
           z-index: 1;
@@ -644,6 +652,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         }
 
         .tab-indicator.stories { transform: translateX(100%); }
+        .tab-indicator.reels { transform: translateX(200%); }
 
         /* VERTICAL STORY FEED */
         .story-feed-vertical {
