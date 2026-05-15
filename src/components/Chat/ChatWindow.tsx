@@ -355,16 +355,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       animate={{ opacity: 1 }}
       className="chat-window"
       style={{
-        backgroundImage: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
-          ? settings.appearance.wallpaper
-          : 'none'),
-        backgroundSize: activeWallpaper ? wpSize : 'cover',
-        backgroundPosition: activeWallpaper ? wpPosition : 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-        backgroundColor: 'var(--bg-dark)'
+        position: 'relative',
+        backgroundColor: 'var(--bg-dark)',
+        overflow: 'hidden'
       }}
     >
+      {/* Immersive Wallpaper Layer */}
+      {activeWallpaper && (
+        <div 
+          className="wallpaper-container"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+            overflow: 'hidden'
+          }}
+        >
+          <img 
+            src={activeWallpaper.replace('url(', '').replace(')', '').replace(/['\"]/g, '')} 
+            alt="Background"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: `scale(${parseFloat(wpSize) / 100 || 1})`,
+              objectPosition: wpPosition || 'center',
+              filter: 'brightness(0.9)'
+            }}
+          />
+        </div>
+      )}
+
+      <div className="chat-content-layer" style={{ 
+        position: 'relative', 
+        zIndex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%' 
+      }}>
       <div className="chat-top-bar">
         <AnimatePresence mode="wait">
           {selectedMessageIds.length > 0 ? (
@@ -1297,6 +1326,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           </div>
         )}
       </AnimatePresence>
+      </div>
     </motion.main>
   );
 };
