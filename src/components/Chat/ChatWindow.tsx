@@ -640,7 +640,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         <div ref={bottomRef} />
       </div>
 
-      <div className="input-area" style={{ position: 'relative' }}>
+      <div className="input-area" style={{ 
+        position: 'relative',
+        background: 'rgba(0, 0, 0, 0.2)',
+        backdropFilter: 'blur(25px)',
+        borderTop: '1px solid var(--border)'
+      }}>
         <AnimatePresence>
           {recipientTyping && (
             <motion.div
