@@ -71,6 +71,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   }, [settings?.privacy?.stealthMode]);
   const [wallpaperPos, setWallpaperPos] = useState({ x: 50, y: 50 });
   const [isDraggingWp, setIsDraggingWp] = useState(false);
+  const wpAdjustRef = useRef<HTMLDivElement>(null);
+
+  // Fix onWheel event for wallpaper adjustment (preventing whole page zoom)
+  useEffect(() => {
+    const el = wpAdjustRef.current;
+    if (!el) return;
+    
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setWallpaperZoom(prev => Math.min(Math.max(prev - e.deltaY * 0.1, 20), 500));
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [adjustingWallpaper]);
 
   // Stealth Mode Effect: When on, appear offline to others (handled by App.tsx settings listener, but we keep this for instant local feedback)
   useEffect(() => {
@@ -508,7 +523,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       <Search size={20} />
                     </motion.button>
 
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.05, background: isGhostMode ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.05)' }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={async () => {
                         const newState = !isGhostMode;
                         setIsGhostMode(newState);
@@ -532,7 +549,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                         border: 'none',
                         cursor: 'pointer'
                       }}
-                      title="Ghost Mode (Secret Chat)"
                     >
                       <Shield size={20} style={{ color: isGhostMode ? '#a855f7' : 'inherit' }} />
                     </motion.button>
@@ -1223,6 +1239,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               </div>
               
               <div 
+                ref={wpAdjustRef}
                 style={{ 
                   width: '100%', 
                   height: '350px', 
@@ -1230,12 +1247,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   overflow: 'hidden', 
                   position: 'relative',
                   background: '#000',
-                  border: '2px solid rgba(255,255,255,0.8)', // The "White Box" representing chat background
                   cursor: isDraggingWp ? 'grabbing' : 'grab',
                   touchAction: 'none'
-                }}
-                onWheel={(e) => {
-                  setWallpaperZoom(prev => Math.min(Math.max(prev - e.deltaY * 0.1, 20), 500));
                 }}
                 onMouseDown={() => setIsDraggingWp(true)}
                 onMouseUp={() => setIsDraggingWp(false)}
@@ -1249,6 +1262,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   }
                 }}
               >
+                {/* Background Image */}
                 <div style={{ 
                   width: '100%', 
                   height: '100%', 
@@ -1258,15 +1272,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   backgroundRepeat: 'no-repeat',
                   pointerEvents: 'none'
                 }} />
+
+                {/* Mask Overlay with Hole (The White Box) */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 0 200px rgba(0,0,0,0.6)', // Mask around the box
+                  border: '2px solid rgba(255,255,255,1)', // The "White Box"
+                  margin: '40px', // This makes the white box smaller than the image area
+                  borderRadius: '12px'
+                }} />
                 
-                {/* Mock UI for context */}
-                <div style={{ position: 'absolute', top: '15px', left: '15px', right: '15px', display: 'flex', justifyContent: 'space-between' }}>
-                   <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-                   <div style={{ width: '100px', height: '10px', borderRadius: '5px', background: 'rgba(255,255,255,0.2)', marginTop: '10px' }} />
-                   <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                {/* Mock UI for context (inside the white box area) */}
+                <div style={{ position: 'absolute', top: '55px', left: '55px', right: '55px', display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                   <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                   <div style={{ width: '80px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.2)', marginTop: '8px' }} />
+                   <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
                 </div>
-                <div style={{ position: 'absolute', bottom: '25px', right: '20px', padding: '12px 18px', background: 'var(--primary)', borderRadius: '20px 20px 4px 20px', fontSize: '0.85rem', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
-                  Perfect fit! 📸
+                <div style={{ position: 'absolute', bottom: '65px', right: '60px', padding: '10px 15px', background: 'var(--primary)', borderRadius: '15px 15px 4px 15px', fontSize: '0.8rem', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', pointerEvents: 'none' }}>
+                  Looks good! 📸
                 </div>
               </div>
 
