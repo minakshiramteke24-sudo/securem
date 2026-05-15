@@ -57,6 +57,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [activeWallpaper, setActiveWallpaper] = useState<string | null>(null);
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(false);
+  const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
+  const [wallpaperZoom, setWallpaperZoom] = useState(100);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1006,8 +1008,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       const reader = new FileReader();
                       reader.onloadend = async () => {
                         const base64 = reader.result as string;
-                        setActiveWallpaper(`url(${base64})`);
-                        await setChatWallpaper(user.uid, chatId, `url(${base64})`);
+                        setAdjustingWallpaper(base64);
                       };
                       reader.readAsDataURL(file);
                     }
@@ -1170,6 +1171,85 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
             </button>
           </motion.div>,
           document.body
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {adjustingWallpaper && (
+          <div 
+            className="wallpaper-adjust-overlay"
+            style={{ position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(15px)' }}
+          >
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '28px', width: '90%', maxWidth: '500px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}
+            >
+              <h3 style={{ margin: 0, textAlign: 'center' }}>Adjust Wallpaper</h3>
+              
+              <div style={{ 
+                width: '100%', 
+                height: '300px', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                position: 'relative',
+                background: 'var(--bg-dark)',
+                border: '1px solid var(--border)'
+              }}>
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  backgroundImage: `url(${adjustingWallpaper})`,
+                  backgroundSize: `${wallpaperZoom}%`,
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  transition: 'background-size 0.1s ease'
+                }} />
+                
+                {/* Mock Chat Bubble for context */}
+                <div style={{ position: 'absolute', bottom: '20px', right: '20px', padding: '10px 15px', background: 'var(--primary)', borderRadius: '15px 15px 0 15px', fontSize: '0.8rem', color: 'white' }}>
+                  Looks great! ✨
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span>Zoom Level</span>
+                  <span>{wallpaperZoom}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="300" 
+                  value={wallpaperZoom}
+                  onChange={(e) => setWallpaperZoom(parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: 'var(--primary)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  onClick={() => setAdjustingWallpaper(null)}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (user && chatId && adjustingWallpaper) {
+                      const wpString = `url(${adjustingWallpaper})`;
+                      setActiveWallpaper(wpString);
+                      await setChatWallpaper(user.uid, chatId, wpString);
+                    }
+                    setAdjustingWallpaper(null);
+                  }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Apply Wallpaper
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </motion.main>
