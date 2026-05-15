@@ -36,7 +36,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         setUser(firebaseUser);
-        setUserPresence(firebaseUser.uid);
         
         // Setup real-time listeners for profile and settings
         const userRef = ref(rtdb, `users/${firebaseUser.uid}`);

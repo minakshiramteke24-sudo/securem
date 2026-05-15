@@ -27,7 +27,7 @@ import {
 } from "../../services/userService";
 import { updateUserSettings } from "../../services/settingsService";
 import { rtdb } from "../../services/firebase";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, set } from "firebase/database";
 import MessageBubble from "./MessageBubble";
 import ActionToolbar from "./ActionToolbar";
 import { prepareEncryptedFile } from "../../services/mediaService";
@@ -86,16 +86,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [adjustingWallpaper]);
-
-  // Stealth Mode Effect: When on, appear offline to others (handled by App.tsx settings listener, but we keep this for instant local feedback)
-  useEffect(() => {
-    if (!user) return;
-    if (isGhostMode) {
-      updateUserStatus(user.uid, "offline");
-    } else {
-      updateUserStatus(user.uid, "online");
-    }
-  }, [isGhostMode, user]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -530,9 +520,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                         const newState = !isGhostMode;
                         setIsGhostMode(newState);
                         if (user) {
-                          await updateUserSettings(user.uid, {
-                            privacy: { ...settings.privacy, stealthMode: newState }
-                          });
+                          // Deep path update to avoid spreading settings and causing races
+                          const settingsPath = `users/${user.uid}/settings/privacy/stealthMode`;
+                          await set(ref(rtdb, settingsPath), newState);
                         }
                       }}
                       className={`toolbar-btn ${isGhostMode ? 'active ghost' : ''}`}
