@@ -651,6 +651,17 @@ export const markAsRead = async (chatId: string, uid: string) => {
 };
 
 /**
+ * MARK INDIVIDUAL MESSAGE AS READ
+ */
+export const markMessageAsRead = async (chatId: string, messageId: string) => {
+  try {
+    await update(ref(rtdb, `messages/${chatId}/${messageId}`), { read: true });
+  } catch (err) {
+    console.error("[ChatService] Mark message as read failed:", err);
+  }
+};
+
+/**
  * PIN CHATS
  */
 export const togglePinChat = async (uid: string, chatId: string) => {

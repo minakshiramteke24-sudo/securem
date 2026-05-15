@@ -1,4 +1,4 @@
-import { ref, set, get, update } from "firebase/database";
+import { ref, set, get, update, onDisconnect, serverTimestamp } from "firebase/database";
 import { rtdb } from "./firebase";
 
 export interface UserProfile {
@@ -99,4 +99,19 @@ export const isUserBlocked = async (myUid: string, targetUid: string): Promise<b
   const blockRef = ref(rtdb, `users/${myUid}/blockedUsers/${targetUid}`);
   const snapshot = await get(blockRef);
   return snapshot.exists();
+};
+
+/**
+ * SET USER PRESENCE (Online/Offline)
+ */
+export const setUserPresence = (uid: string) => {
+  const statusRef = ref(rtdb, `users/${uid}/status`);
+  const lastSeenRef = ref(rtdb, `users/${uid}/lastSeen`);
+  
+  // Set to online
+  set(statusRef, "online");
+  
+  // On disconnect, set to offline and record timestamp
+  onDisconnect(statusRef).set("offline");
+  onDisconnect(lastSeenRef).set(serverTimestamp());
 };

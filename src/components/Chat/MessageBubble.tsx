@@ -5,7 +5,7 @@ import { type UserProfile } from "../../services/userService";
 import { useCrypto } from "../../context/CryptoContext";
 import { useAuth } from "../../context/AuthContext";
 import { unwrapAESKey, decryptMessage } from "../../services/cryptoService";
-import { Shield, ShieldCheck, CheckCircle2, FileText, Download } from "lucide-react";
+import { Shield, ShieldCheck, CheckCircle2, FileText, Download, Check, CheckCheck } from "lucide-react";
 import { decryptBase64File } from "../../services/mediaService";
 
 interface MessageBubbleProps {
@@ -472,6 +472,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                   <Shield size={10} />
                   <span>E2EE</span>
+                </div>
+              )}
+              {isMe && (
+                <div style={{ marginLeft: "2px" }}>
+                  {message.read ? (
+                    <CheckCheck size={14} color="#60a5fa" strokeWidth={3} />
+                  ) : (
+                    <Check size={14} strokeWidth={3} />
+                  )}
                 </div>
               )}
               <span style={{ opacity: 0.5 }}>•</span>

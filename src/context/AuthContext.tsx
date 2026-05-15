@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { type User, onAuthStateChanged } from "firebase/auth";
 import { ref, onValue } from "firebase/database";
 import { auth, rtdb } from "../services/firebase";
-import { type UserProfile } from "../services/userService";
+import { type UserProfile, setUserPresence } from "../services/userService";
 import { type UserSettings, defaultSettings } from "../services/settingsService";
 
 interface AuthContextType {
@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (firebaseUser) {
         setUser(firebaseUser);
+        setUserPresence(firebaseUser.uid);
         
         // Setup real-time listeners for profile and settings
         const userRef = ref(rtdb, `users/${firebaseUser.uid}`);

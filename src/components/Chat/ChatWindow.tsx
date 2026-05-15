@@ -13,6 +13,7 @@ import {
   getOrCreateChat, 
   subscribeToMessages, 
   markAsRead,
+  markMessageAsRead,
   toggleReaction,
   editMessage,
   setTypingStatus,
@@ -74,11 +75,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   }, [user, recipient]);
 
   useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
     if (!chatId || !user) return;
 
     const unsubscribe = subscribeToMessages(chatId, user.uid, (msgs) => {
+      // Desktop Notification logic
+      if (msgs.length > messages.length && messages.length > 0) {
+        const lastMsg = msgs[msgs.length - 1];
+        if (lastMsg.senderId === recipient.uid && document.visibilityState === 'hidden') {
+          if (Notification.permission === "granted") {
+            new Notification(`New message from ${recipient.username}`, {
+              body: "Encrypted message received",
+              icon: recipient.avatar || "/favicon.ico"
+            });
+          }
+        }
+      }
+
       setMessages(msgs);
       markAsRead(chatId, user.uid);
+      
+      // Mark incoming messages as read
+      msgs.forEach(msg => {
+        if (msg.senderId === recipient.uid && !msg.read) {
+          markMessageAsRead(chatId, msg.id);
+        }
+      });
     });
 
     const typingRef = ref(rtdb, `typing/${chatId}/${recipient.uid}`);
@@ -368,7 +395,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
 
                     <div className="header-info">
                       <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>{recipient?.username || "Secure User"}</h3>
-                      <p className="status-text" style={{ margin: 0, fontSize: '0.75rem', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontWeight: 500 }}>
+                      <p className="status-text" style={{ margin: 0, fontSize: '0.75rem', color: recipient?.status === 'online' ? '#10b981' : 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {recipient?.status === 'online' && (
+                          <motion.span 
+                            animate={{ opacity: [0.5, 1, 0.5] }} 
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} 
+                          />
+                        )}
                         {recipientTyping ? "typing..." : (recipient?.status === 'online' ? "Active now" : (recipient?.status === 'offline' ? "Offline" : recipient?.status || "Click for profile"))}
                       </p>
                     </div>
@@ -455,7 +489,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         <div ref={bottomRef} />
       </div>
 
-      <div className="input-area">
+      <div className="input-area" style={{ position: 'relative' }}>
+        <AnimatePresence>
+          {recipientTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              style={{
+                position: 'absolute',
+                top: '-25px',
+                left: '20px',
+                padding: '2px 10px',
+                fontSize: '0.7rem',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 600,
+                background: 'var(--bg-main)',
+                borderRadius: '8px 8px 0 0',
+                border: '1px solid var(--border)',
+                borderBottom: 'none',
+                zIndex: 5
+              }}
+            >
+              <div style={{ display: 'flex', gap: '2px' }}>
+                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor' }} />
+                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor' }} />
+                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor' }} />
+              </div>
+              {recipient.username} is typing...
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {showEmojiPicker && (
             <motion.div 
