@@ -792,7 +792,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 whileHover={{ scale: 1.1, x: 2 }}
                 whileTap={{ scale: 0.9 }}
                 type="submit" 
-                onClick={handleSend}
                 className="send-btn" 
                 style={{ 
                   background: 'linear-gradient(135deg, var(--primary), var(--primary-hover))', 
