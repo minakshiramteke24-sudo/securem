@@ -117,9 +117,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         }
       });
       
-      // Update wallpaper from summary
-      const summary = msgs.length > 0 ? { wallpaper: (msgs as any)._summary?.wallpaper } : null; 
-      // Wait, I need a separate listener for summary or check how subscribeToMessages works.
+      // Update wallpaper from summary (handled by separate listener)
     });
 
     const typingRef = ref(rtdb, `typing/${chatId}/${recipient.uid}`);
@@ -997,7 +995,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                       height: '80px', 
                       borderRadius: '12px', 
                       background: wp.value || 'var(--bg-main)', 
-                      border: chatWallpaper === wp.value ? '3px solid var(--primary)' : '1px solid var(--border)',
+                      border: activeWallpaper === wp.value ? '3px solid var(--primary)' : '1px solid var(--border)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
