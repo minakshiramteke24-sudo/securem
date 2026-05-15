@@ -66,7 +66,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const emojiToggleRef = useRef<HTMLButtonElement>(null);
   const profileCardRef = useRef<HTMLDivElement>(null);
-  const lightboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initChat = async () => {
