@@ -272,6 +272,7 @@ const App: React.FC = () => {
             onSelectChat={(_, recipient) => setSelectedRecipient(recipient)} 
             onShowSettings={() => setView("settings")}
             onShowReels={() => setView("reels")}
+            activeView={view}
             onInitiateCall={async (callData) => {
               const fullCallData = {
                 ...callData,

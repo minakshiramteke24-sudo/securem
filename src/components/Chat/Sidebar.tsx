@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, MessageCircle, User as UserIcon, Check, 
-  Phone, Video, Eraser, UserMinus, Settings, LogOut, Play
+  Phone, Video, Eraser, UserMinus, Settings, LogOut, Play, Heart
 } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
 import { searchUsers, type UserProfile } from "../../services/userService";
@@ -11,15 +11,17 @@ import { subscribeToActiveStories, postStory, type Story } from "../../services/
 import { auth } from "../../services/firebase";
 import StoryViewer from "./StoryViewer";
 import StoryCreator from "./StoryCreator";
+import { type Reel, subscribeToReels } from "../../services/reelsService";
 
 interface SidebarProps {
   onSelectChat: (chatId: string, recipient: UserProfile) => void;
   onInitiateCall: (callData: any) => void;
   onShowSettings: () => void;
   onShowReels: () => void;
+  activeView: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings, onShowReels }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowSettings, onShowReels, activeView }) => {
   const { user, profile } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +31,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const [stories, setStories] = useState<Story[]>([]);
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [isPostingStory, setIsPostingStory] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chats' | 'stories' | 'reels'>('chats');
+  const [reels, setReels] = useState<Reel[]>([]);
+  const activeTab = activeView === 'reels' ? 'reels' : (localTab);
+  const [localTab, setLocalTab] = useState<'chats' | 'stories'>('chats');
 
   // Menu states
   const [profileMenuOpen, setProfileMenuOpen] = useState<{ x: number, y: number } | null>(null);
@@ -54,9 +58,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
         setStories(activeStories);
       });
 
+      const unsubscribeReels = subscribeToReels((data) => {
+        setReels(data);
+      });
+
       return () => {
         unsubscribe();
         unsubscribeStories();
+        unsubscribeReels();
       };
     }
   }, [user]);
@@ -224,14 +233,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
       <div className="tab-switcher-premium">
         <button 
           className={`tab-btn ${activeTab === 'chats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chats')}
+          onClick={() => { setLocalTab('chats'); onSelectChat("", null as any); }}
         >
           <MessageCircle size={18} />
           <span>Chats</span>
         </button>
         <button 
           className={`tab-btn ${activeTab === 'stories' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stories')}
+          onClick={() => setLocalTab('stories')}
         >
           <img 
             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'%3E%3C/line%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3C/svg%3E" 
@@ -245,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           className={`tab-btn ${activeTab === 'reels' ? 'active' : ''}`}
           onClick={() => onShowReels()}
         >
-          <Play size={18} fill="currentColor" />
+          <Play size={18} fill={activeTab === 'reels' ? "currentColor" : "none"} />
           <span>Reels</span>
         </button>
         <div className={`tab-indicator ${activeTab}`} />
@@ -325,6 +334,32 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                   {searchResults.length === 0 && filteredRecentChats.length === 0 && <div className="no-results">No users or chats found</div>}
                 </>
               )}
+            </motion.div>
+            <motion.div
+              key="reels"
+              className="reels-sidebar-grid"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <p className="section-label">Discover Reels</p>
+              <div className="reels-grid">
+                {reels.map((reel) => (
+                  <motion.div 
+                    key={reel.id} 
+                    className="reel-thumb"
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => onShowReels()}
+                  >
+                    <video src={reel.videoUrl} muted />
+                    <div className="thumb-info">
+                      <Heart size={10} fill="white" />
+                      <span>{reel.likes}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              {reels.length === 0 && <div className="no-results">No reels yet</div>}
             </motion.div>
           ) : activeTab === 'stories' ? (
             <motion.div
@@ -769,6 +804,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
           animation: skeleton-shimmer 1.5s infinite linear;
         }
+
+        /* REELS SIDEBAR GRID */
+        .reels-sidebar-grid { padding: 0 1rem; }
+        .reels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .reel-thumb { aspect-ratio: 9/16; background: #000; border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .reel-thumb video { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+        .reel-thumb:hover video { opacity: 1; }
+        .thumb-info { position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: white; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; }
 
         @keyframes skeleton-shimmer {
           0% { transform: translateX(-100%); }
