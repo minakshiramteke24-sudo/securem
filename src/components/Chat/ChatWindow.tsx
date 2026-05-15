@@ -526,10 +526,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           <button
             type="button"
             style={{ 
-              background: 'transparent', 
+              background: 'rgba(255, 255, 255, 0.05)', 
               color: '#ffffff', 
-              width: '42px', 
-              height: '42px', 
+              width: '40px', 
+              height: '40px', 
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -538,21 +538,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
-              padding: 0
+              padding: 0,
+              transition: 'all 0.2s'
             }}
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             title="Emojis"
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
           >
-            <Smile size={24} strokeWidth={2.5} style={{ display: 'block', minWidth: '24px', minHeight: '24px' }} />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
           </button>
 
           <button
             type="button"
             style={{ 
-              background: 'transparent', 
+              background: 'rgba(255, 255, 255, 0.05)', 
               color: '#ffffff', 
-              width: '42px', 
-              height: '42px', 
+              width: '40px', 
+              height: '40px', 
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -561,7 +566,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               cursor: 'pointer',
               flexShrink: 0,
               zIndex: 10,
-              padding: 0
+              padding: 0,
+              transition: 'all 0.2s'
             }}
             onClick={() => {
               const input = document.createElement('input');
@@ -570,8 +576,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
               input.click();
             }}
             title="Attach File"
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
           >
-            <Paperclip size={24} strokeWidth={2.5} style={{ display: 'block', minWidth: '24px', minHeight: '24px' }} />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
           </button>
 
           <AnimatePresence mode="wait">
@@ -774,8 +784,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                      backdropFilter: 'blur(4px)'
                    }}
                  >
-                    <X size={26} strokeWidth={2.5} style={{ display: 'block', color: 'white', minWidth: '26px', minHeight: '26px' }} />
-                 </button>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', color: 'white' }}>
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>                 </button>
                </div>
                
                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--bg-card)', marginTop: '-50px', border: '4px solid var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 'bold', color: 'white', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 10 }}>
