@@ -20,19 +20,15 @@ import {
   deleteForMe,
   deleteForEveryone,
   setChatWallpaper,
-  pinMessage
+  pinMessage,
+  sendMediaMessage
 } from "../../services/chatService";
-import { 
-  updateUserStatus 
-} from "../../services/userService";
-import { updateUserSettings } from "../../services/settingsService";
 import { rtdb } from "../../services/firebase";
 import { ref, onValue, set } from "firebase/database";
+import { transferService, type TransferSession } from "../../services/transferService";
 import MessageBubble from "./MessageBubble";
 import ActionToolbar from "./ActionToolbar";
 import { prepareEncryptedFile } from "../../services/mediaService";
-import { sendMediaMessage } from "../../services/chatService";
-import { transferService, type TransferSession } from "../../services/transferService";
 import TransferOverlay from "./TransferOverlay";
 
 interface ChatWindowProps {
