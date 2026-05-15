@@ -722,7 +722,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                 placeholder="Type a secure message..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
                 className="chat-input"
                 style={{ 
                   flex: 1, 
