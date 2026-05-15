@@ -58,10 +58,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
   const [showProfile, setShowProfile] = useState(false);
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false);
   const [activeWallpaper, setActiveWallpaper] = useState<string | null>(null);
+  const [wpPosition, setWpPosition] = useState("center");
+  const [wpSize, setWpSize] = useState("cover");
   const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [adjustingWallpaper, setAdjustingWallpaper] = useState<string | null>(null);
   const [wallpaperZoom, setWallpaperZoom] = useState(100);
+  const [wallpaperPos, setWallpaperPos] = useState({ x: 50, y: 50 });
+  const [isDraggingWp, setIsDraggingWp] = useState(false);
 
   // Stealth Mode Effect: When on, appear offline to others
   useEffect(() => {
@@ -154,6 +158,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
       if (snap.exists()) {
         const data = snap.val();
         setActiveWallpaper(data.wallpaper || null);
+        setWpPosition(data.wallpaperPosition || "center");
+        setWpSize(data.wallpaperSize || "cover");
         setPinnedMessageId(data.pinnedMessageId || null);
       }
     });
@@ -613,8 +619,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
           background: activeWallpaper || (settings?.appearance?.wallpaper && settings.appearance.wallpaper !== 'default'
             ? settings.appearance.wallpaper
             : undefined),
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundSize: activeWallpaper ? wpSize : 'cover',
+          backgroundPosition: activeWallpaper ? wpPosition : 'center'
         }}
       >
         {(() => {
@@ -1190,75 +1196,93 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
         {adjustingWallpaper && (
           <div 
             className="wallpaper-adjust-overlay"
-            style={{ position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(15px)' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(15px)' }}
           >
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '28px', width: '90%', maxWidth: '500px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '32px', width: '95%', maxWidth: '600px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '20px' }}
             >
-              <h3 style={{ margin: 0, textAlign: 'center' }}>Adjust Wallpaper</h3>
+              <div style={{ textAlign: 'center' }}>
+                <h3 style={{ margin: 0 }}>Customize Background</h3>
+                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Drag to move • Scroll to zoom</p>
+              </div>
               
-              <div style={{ 
-                width: '100%', 
-                height: '300px', 
-                borderRadius: '16px', 
-                overflow: 'hidden', 
-                position: 'relative',
-                background: 'var(--bg-dark)',
-                border: '1px solid var(--border)'
-              }}>
+              <div 
+                style={{ 
+                  width: '100%', 
+                  height: '350px', 
+                  borderRadius: '20px', 
+                  overflow: 'hidden', 
+                  position: 'relative',
+                  background: '#000',
+                  border: '2px solid rgba(255,255,255,0.8)', // The "White Box" representing chat background
+                  cursor: isDraggingWp ? 'grabbing' : 'grab',
+                  touchAction: 'none'
+                }}
+                onWheel={(e) => {
+                  setWallpaperZoom(prev => Math.min(Math.max(prev - e.deltaY * 0.1, 20), 500));
+                }}
+                onMouseDown={() => setIsDraggingWp(true)}
+                onMouseUp={() => setIsDraggingWp(false)}
+                onMouseLeave={() => setIsDraggingWp(false)}
+                onMouseMove={(e) => {
+                  if (isDraggingWp) {
+                    setWallpaperPos(prev => ({
+                      x: Math.min(Math.max(prev.x + e.movementX * 0.2, 0), 100),
+                      y: Math.min(Math.max(prev.y + e.movementY * 0.2, 0), 100)
+                    }));
+                  }
+                }}
+              >
                 <div style={{ 
                   width: '100%', 
                   height: '100%', 
                   backgroundImage: `url(${adjustingWallpaper})`,
                   backgroundSize: `${wallpaperZoom}%`,
-                  backgroundPosition: 'center',
+                  backgroundPosition: `${wallpaperPos.x}% ${wallpaperPos.y}%`,
                   backgroundRepeat: 'no-repeat',
-                  transition: 'background-size 0.1s ease'
+                  pointerEvents: 'none'
                 }} />
                 
-                {/* Mock Chat Bubble for context */}
-                <div style={{ position: 'absolute', bottom: '20px', right: '20px', padding: '10px 15px', background: 'var(--primary)', borderRadius: '15px 15px 0 15px', fontSize: '0.8rem', color: 'white' }}>
-                  Looks great! ✨
+                {/* Mock UI for context */}
+                <div style={{ position: 'absolute', top: '15px', left: '15px', right: '15px', display: 'flex', justifyContent: 'space-between' }}>
+                   <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                   <div style={{ width: '100px', height: '10px', borderRadius: '5px', background: 'rgba(255,255,255,0.2)', marginTop: '10px' }} />
+                   <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                </div>
+                <div style={{ position: 'absolute', bottom: '25px', right: '20px', padding: '12px 18px', background: 'var(--primary)', borderRadius: '20px 20px 4px 20px', fontSize: '0.85rem', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+                  Perfect fit! 📸
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  <span>Zoom Level</span>
-                  <span>{wallpaperZoom}%</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="50" 
-                  max="300" 
-                  value={wallpaperZoom}
-                  onChange={(e) => setWallpaperZoom(parseInt(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--primary)' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <button
-                  onClick={() => setAdjustingWallpaper(null)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border)', cursor: 'pointer' }}
+                  onClick={() => {
+                    setAdjustingWallpaper(null);
+                    setWallpaperZoom(100);
+                    setWallpaperPos({ x: 50, y: 50 });
+                  }}
+                  style={{ flex: 1, padding: '14px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: '600' }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={async () => {
                     if (user && chatId && adjustingWallpaper) {
-                      const wpString = `url(${adjustingWallpaper})`;
-                      setActiveWallpaper(wpString);
-                      await setChatWallpaper(user.uid, chatId, wpString);
+                      const pos = `${wallpaperPos.x}% ${wallpaperPos.y}%`;
+                      const size = `${wallpaperZoom}%`;
+                      setActiveWallpaper(`url(${adjustingWallpaper})`);
+                      setWpPosition(pos);
+                      setWpSize(size);
+                      await setChatWallpaper(user.uid, chatId, `url(${adjustingWallpaper})`, pos, size);
                     }
                     setAdjustingWallpaper(null);
                   }}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={{ flex: 1, padding: '14px', borderRadius: '14px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
                 >
-                  Apply Wallpaper
+                  Apply & Save
                 </button>
               </div>
             </motion.div>

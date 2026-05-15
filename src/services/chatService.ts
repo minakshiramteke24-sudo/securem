@@ -698,9 +698,13 @@ export const subscribeToChats = (uid: string, callback: (chats: any[]) => void) 
   });
 };
 
-export const setChatWallpaper = async (uid: string, chatId: string, wallpaper: string) => {
+export const setChatWallpaper = async (uid: string, chatId: string, wallpaper: string, position: string = "center", size: string = "cover") => {
   try {
-    await update(ref(rtdb, `user-chats/${uid}/${chatId}/summary`), { wallpaper });
+    await update(ref(rtdb, `user-chats/${uid}/${chatId}/summary`), { 
+      wallpaper,
+      wallpaperPosition: position,
+      wallpaperSize: size
+    });
   } catch (err) {
     console.error("[ChatService] Failed to set wallpaper:", err);
   }
