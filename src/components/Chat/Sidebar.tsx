@@ -245,6 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 
       {/* STORY TAB CONTENT */}
       <div className="sidebar-content">
+        <AnimatePresence mode="wait">
           {searchTerm.length > 0 ? (
             <motion.div
               key="search"
