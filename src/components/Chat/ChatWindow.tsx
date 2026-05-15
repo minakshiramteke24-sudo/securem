@@ -1252,7 +1252,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ recipient, onInitiateCall, onBa
                   inset: 0,
                   pointerEvents: 'none',
                   border: '3px solid rgba(255,255,255,1)', // The "White Box"
-                  margin: '20px 80px', // More vertical and taller
+                  margin: '20px 100px', // Taller, narrower to represent chat better
                   borderRadius: '24px',
                   boxShadow: '0 0 20px rgba(0,0,0,0.5), 0 0 0 400px rgba(0,0,0,0.6)'
                 }} />
