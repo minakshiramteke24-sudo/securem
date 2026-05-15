@@ -23,9 +23,6 @@ import {
   pinMessage
 } from "../../services/chatService";
 import { 
-  updateUserProfile, 
-  getUserProfile, 
-  setUserPresence,
   updateUserStatus 
 } from "../../services/userService";
 import { rtdb } from "../../services/firebase";
