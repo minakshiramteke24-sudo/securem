@@ -4,7 +4,6 @@ import {
   Heart, MessageCircle, Share2, Music, 
   Plus, ArrowLeft, Play, Volume2, VolumeX 
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 import { type Reel, subscribeToReels, likeReel, incrementView } from '../../services/reelsService';
 import ReelsUpload from './ReelsUpload';
 

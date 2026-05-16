@@ -32,8 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [isPostingStory, setIsPostingStory] = useState(false);
   const [reels, setReels] = useState<Reel[]>([]);
-  const activeTab = activeView === 'reels' ? 'reels' : (localTab);
   const [localTab, setLocalTab] = useState<'chats' | 'stories'>('chats');
+  const activeTab = activeView === 'reels' ? 'reels' : (localTab);
 
   // Menu states
   const [profileMenuOpen, setProfileMenuOpen] = useState<{ x: number, y: number } | null>(null);
@@ -335,6 +335,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                 </>
               )}
             </motion.div>
+          ) : activeTab === 'reels' ? (
             <motion.div
               key="reels"
               className="reels-sidebar-grid"
