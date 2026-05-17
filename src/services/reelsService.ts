@@ -75,3 +75,45 @@ export const incrementView = async (reelId: string) => {
     views: increment(1)
   });
 };
+
+export interface ReelComment {
+  id: string;
+  authorName: string;
+  authorAvatar: string;
+  text: string;
+  createdAt: number;
+}
+
+export const addReelComment = async (
+  reelId: string, 
+  authorName: string, 
+  authorAvatar: string, 
+  text: string
+) => {
+  const commentRef = push(ref(rtdb, `reels/${reelId}/comments`));
+  await set(commentRef, {
+    id: commentRef.key,
+    authorName,
+    authorAvatar,
+    text,
+    createdAt: Date.now()
+  });
+};
+
+export const subscribeToReelComments = (
+  reelId: string, 
+  callback: (comments: ReelComment[]) => void
+) => {
+  const commentsRef = ref(rtdb, `reels/${reelId}/comments`);
+  const unsubscribe = onValue(commentsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const list: ReelComment[] = Object.values(data);
+      list.sort((a, b) => b.createdAt - a.createdAt); // Newest first
+      callback(list);
+    } else {
+      callback([]);
+    }
+  });
+  return () => off(commentsRef, 'value', unsubscribe);
+};
