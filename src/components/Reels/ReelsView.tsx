@@ -4,7 +4,7 @@ import {
   Heart, MessageCircle, Share2, Music, 
   Plus, ArrowLeft, Play, Volume2, VolumeX 
 } from 'lucide-react';
-import { type Reel, subscribeToReels, likeReel, incrementView } from '../../services/reelsService';
+import { type Reel, subscribeToReels, likeReel, unlikeReel, incrementView } from '../../services/reelsService';
 import ReelsUpload from './ReelsUpload';
 
 interface ReelsViewProps {
@@ -86,7 +86,17 @@ const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
         .reels-header { position: absolute; top: 0; left: 0; right: 0; z-index: 100; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
         .reels-header h2 { font-size: 1.5rem; font-weight: 800; }
         
-        .reels-feed { flex: 1; overflow-y: scroll; scroll-snap-type: y mandatory; height: 100%; }
+        .reels-feed { 
+          flex: 1; 
+          overflow-y: scroll; 
+          scroll-snap-type: y mandatory; 
+          height: 100%; 
+          scrollbar-width: none; 
+          -ms-overflow-style: none; 
+        }
+        .reels-feed::-webkit-scrollbar { 
+          display: none; 
+        }
         .reel-item { height: 100%; scroll-snap-align: start; position: relative; display: flex; align-items: center; justify-content: center; background: #000; }
         
         .empty-reels { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
@@ -104,8 +114,11 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
-  const [liked, setLiked] = useState(false);
   const [videoSrc, setVideoSrc] = useState<string>('');
+  const [liked, setLiked] = useState(() => {
+    const likedReels = JSON.parse(localStorage.getItem('liked_reels') || '{}');
+    return !!likedReels[reel.id];
+  });
 
   useEffect(() => {
     if (reel.videoUrl.startsWith('data:')) {
@@ -150,10 +163,17 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
   };
 
   const handleLike = () => {
-    if (!liked) {
+    const likedReels = JSON.parse(localStorage.getItem('liked_reels') || '{}');
+    if (liked) {
+      unlikeReel(reel.id);
+      likedReels[reel.id] = false;
+      setLiked(false);
+    } else {
       likeReel(reel.id);
+      likedReels[reel.id] = true;
       setLiked(true);
     }
+    localStorage.setItem('liked_reels', JSON.stringify(likedReels));
   };
 
   return (
@@ -179,7 +199,7 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
       <div className="reel-actions">
         <button className={`action-btn ${liked ? 'active' : ''}`} onClick={handleLike}>
           <Heart fill={liked ? '#ff2d55' : 'transparent'} color={liked ? '#ff2d55' : 'white'} />
-          <span>{reel.likes + (liked ? 1 : 0)}</span>
+          <span>{reel.likes}</span>
         </button>
         <button className="action-btn">
           <MessageCircle />

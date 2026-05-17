@@ -62,6 +62,13 @@ export const likeReel = async (reelId: string) => {
   });
 };
 
+export const unlikeReel = async (reelId: string) => {
+  const reelRef = ref(rtdb, `reels/${reelId}`);
+  await update(reelRef, {
+    likes: increment(-1)
+  });
+};
+
 export const incrementView = async (reelId: string) => {
   const reelRef = ref(rtdb, `reels/${reelId}`);
   await update(reelRef, {
