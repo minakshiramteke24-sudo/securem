@@ -105,9 +105,23 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [videoSrc, setVideoSrc] = useState<string>('');
 
   useEffect(() => {
-    if (isActive) {
+    if (reel.videoUrl.startsWith('data:')) {
+      fetch(reel.videoUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          setVideoSrc(URL.createObjectURL(blob));
+        })
+        .catch(err => console.error("Error converting base64 to blob:", err));
+    } else {
+      setVideoSrc(reel.videoUrl);
+    }
+  }, [reel.videoUrl]);
+
+  useEffect(() => {
+    if (isActive && videoSrc) {
       if (videoRef.current) {
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
@@ -124,7 +138,7 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
       videoRef.current?.pause();
       setPlaying(false);
     }
-  }, [isActive, reel.id]);
+  }, [isActive, reel.id, videoSrc]);
 
   const togglePlay = () => {
     if (playing) {
@@ -144,16 +158,22 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
 
   return (
     <div className="reel-item">
-      <video 
-        ref={videoRef}
-        src={reel.videoUrl}
-        loop
-        playsInline
-        muted={muted}
-        className="reel-video"
-        onClick={togglePlay}
-        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-      />
+      {videoSrc ? (
+        <video 
+          ref={videoRef}
+          src={videoSrc}
+          loop
+          playsInline
+          muted={muted}
+          className="reel-video"
+          onClick={togglePlay}
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        />
+      ) : (
+        <div className="loading-reel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <div className="spinner-small" />
+        </div>
+      )}
 
       {/* Side Actions */}
       <div className="reel-actions">

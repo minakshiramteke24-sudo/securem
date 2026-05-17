@@ -352,7 +352,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
                     whileHover={{ scale: 1.05 }}
                     onClick={() => onShowReels()}
                   >
-                    <video src={reel.videoUrl} muted />
+                    <ThumbnailVideo videoUrl={reel.videoUrl} />
                     <div className="thumb-info">
                       <Heart size={10} fill="white" />
                       <span>{reel.likes}</span>
@@ -824,3 +824,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, onInitiateCall, onShowS
 };
 
 export default Sidebar;
+
+const ThumbnailVideo: React.FC<{ videoUrl: string }> = ({ videoUrl }) => {
+  const [src, setSrc] = useState('');
+  useEffect(() => {
+    if (videoUrl.startsWith('data:')) {
+      fetch(videoUrl).then(r => r.blob()).then(b => setSrc(URL.createObjectURL(b))).catch(() => {});
+    } else {
+      setSrc(videoUrl);
+    }
+  }, [videoUrl]);
+  return src ? <video src={src} muted preload="metadata" /> : <div style={{width:'100%', height:'100%', background:'#111'}} />;
+};
