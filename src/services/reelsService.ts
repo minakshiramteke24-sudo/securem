@@ -1,6 +1,5 @@
-import { rtdb, storage } from "./firebase";
+import { rtdb } from "./firebase";
 import { ref, push, set, onValue, off, update, increment } from "firebase/database";
-import { ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export interface Reel {
   id: string;
@@ -21,13 +20,15 @@ export const uploadReel = async (
   file: File, 
   caption: string
 ): Promise<string> => {
-  // 1. Upload Video to Storage
+  // 1. Convert Video to Base64
+  const videoUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+
   const reelId = push(ref(rtdb, 'reels')).key!;
-  const storagePath = `reels/${userId}/${reelId}_${file.name}`;
-  const storageRef = sRef(storage, storagePath);
-  
-  await uploadBytes(storageRef, file);
-  const videoUrl = await getDownloadURL(storageRef);
 
   // 2. Save Metadata to RTDB
   const reelData: Reel = {

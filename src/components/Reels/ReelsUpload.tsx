@@ -19,6 +19,10 @@ const ReelsUpload: React.FC<ReelsUploadProps> = ({ onClose }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected && selected.type.startsWith('video/')) {
+      if (selected.size > 5 * 1024 * 1024) {
+        alert("File size exceeds 5MB limit. Please compress your video.");
+        return;
+      }
       setFile(selected);
       setPreview(URL.createObjectURL(selected));
     } else {
@@ -56,7 +60,7 @@ const ReelsUpload: React.FC<ReelsUploadProps> = ({ onClose }) => {
               <Upload size={32} />
             </div>
             <h4>Select Video</h4>
-            <p>MP4, WebM or MOV (Max 50MB)</p>
+            <p>MP4, WebM or MOV (Max 5MB)</p>
             <button className="btn-primary">Browse Files</button>
             <input 
               ref={fileInputRef}
