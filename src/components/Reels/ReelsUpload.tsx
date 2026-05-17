@@ -20,7 +20,7 @@ const ReelsUpload: React.FC<ReelsUploadProps> = ({ onClose }) => {
     const selected = e.target.files?.[0];
     if (selected && selected.type.startsWith('video/')) {
       if (selected.size > 5 * 1024 * 1024) {
-        alert("File size exceeds 5MB limit. Please compress your video.");
+        alert("Video must be less than 5MB to use the bucket-less transfer system.");
         return;
       }
       setFile(selected);
@@ -35,12 +35,25 @@ const ReelsUpload: React.FC<ReelsUploadProps> = ({ onClose }) => {
     
     setIsUploading(true);
     try {
-      await uploadReel(user.uid, profile.username, profile.avatar || '', file, caption);
-      setIsSuccess(true);
-      setTimeout(() => onClose(), 2000);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        try {
+          await uploadReel(user.uid, profile.username, profile.avatar || '', base64Data, caption);
+          setIsSuccess(true);
+          setTimeout(() => onClose(), 2000);
+        } catch (err: any) {
+          alert(`Upload failed: ${err.message}`);
+          setIsUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        alert("Failed to read video file");
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
       alert(`Upload failed: ${err.message}`);
-    } finally {
       setIsUploading(false);
     }
   };

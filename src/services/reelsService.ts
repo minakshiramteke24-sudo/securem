@@ -17,17 +17,9 @@ export const uploadReel = async (
   userId: string, 
   username: string, 
   avatar: string, 
-  file: File, 
+  videoBase64: string, 
   caption: string
 ): Promise<string> => {
-  // 1. Convert Video to Base64
-  const videoUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-  });
-
   const reelId = push(ref(rtdb, 'reels')).key!;
 
   // 2. Save Metadata to RTDB
@@ -36,7 +28,7 @@ export const uploadReel = async (
     creatorId: userId,
     creatorName: username,
     creatorAvatar: avatar,
-    videoUrl,
+    videoUrl: videoBase64,
     caption,
     likes: 0,
     views: 0,

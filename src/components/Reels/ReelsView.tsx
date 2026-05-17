@@ -62,12 +62,8 @@ const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
           ))
         ) : (
           <div className="empty-reels">
-            <div className="empty-reels-content glass">
-              <Play size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
-              <h3>No reels yet</h3>
-              <p style={{ opacity: 0.7 }}>Be the first to share your moments! 🎬</p>
-              <button className="btn-primary" onClick={() => setShowUpload(true)} style={{ marginTop: '1.5rem' }}>Create Reel</button>
-            </div>
+            <p>No reels yet. Be the first to share! 🎬</p>
+            <button className="btn-primary" onClick={() => setShowUpload(true)}>Create Reel</button>
           </div>
         )}
       </div>
@@ -86,15 +82,14 @@ const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
       </AnimatePresence>
 
       <style>{`
-        .reels-container { height: 100%; display: flex; flex-direction: column; background: transparent; position: relative; color: white; }
-        .reels-header { position: absolute; top: 0; left: 0; right: 0; z-index: 100; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); }
+        .reels-container { height: 100%; display: flex; flex-direction: column; background: #000; position: relative; color: white; }
+        .reels-header { position: absolute; top: 0; left: 0; right: 0; z-index: 100; padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
         .reels-header h2 { font-size: 1.5rem; font-weight: 800; }
         
         .reels-feed { flex: 1; overflow-y: scroll; scroll-snap-type: y mandatory; height: 100%; }
         .reel-item { height: 100%; scroll-snap-align: start; position: relative; display: flex; align-items: center; justify-content: center; background: #000; }
         
-        .empty-reels { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
-        .empty-reels-content { padding: 3rem; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
+        .empty-reels { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
         
         .upload-overlay { position: fixed; inset: 0; z-index: 2000; background: var(--bg-dark); }
         
@@ -113,9 +108,18 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
 
   useEffect(() => {
     if (isActive) {
-      videoRef.current?.play().catch(() => {});
-      setPlaying(true);
-      incrementView(reel.id);
+      if (videoRef.current) {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            setPlaying(true);
+            incrementView(reel.id);
+          }).catch((error) => {
+            console.warn("Autoplay prevented:", error);
+            setPlaying(false);
+          });
+        }
+      }
     } else {
       videoRef.current?.pause();
       setPlaying(false);
