@@ -144,7 +144,7 @@ const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
 };
 
 const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive }) => {
-  const { user, profile } = useAuth();
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
