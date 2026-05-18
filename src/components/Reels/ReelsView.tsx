@@ -229,7 +229,7 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
   };
 
   return (
-    <div className="reel-item">
+    <div className="reel-item" style={{ position: 'relative', overflow: 'hidden' }}>
       {videoSrc ? (
         <video 
           ref={videoRef}
@@ -239,7 +239,15 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
           muted={muted}
           className="reel-video"
           onClick={togglePlay}
-          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          style={{ 
+            width: '100%', 
+            height: showComments ? '35%' : '100%', 
+            objectFit: showComments ? 'cover' : 'contain',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
         />
       ) : (
         <div className="loading-reel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -248,22 +256,24 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
       )}
 
       {/* Side Actions */}
-      <div className="reel-actions">
-        <button className={`action-btn ${liked ? 'active' : ''}`} onClick={handleLike}>
-          <Heart fill={liked ? '#ff2d55' : 'transparent'} color={liked ? '#ff2d55' : 'white'} />
-          <span>{reel.likes}</span>
-        </button>
-        <button className="action-btn" onClick={() => setShowComments(true)}>
-          <MessageCircle />
-          <span>{commentsCount}</span>
-        </button>
-        <button className="action-btn" onClick={() => setMuted(!muted)}>
-          {muted ? <VolumeX /> : <Volume2 />}
-        </button>
-        <button className="action-btn" onClick={handleShare}>
-          <Share2 />
-        </button>
-      </div>
+      {!showComments && (
+        <div className="reel-actions">
+          <button className={`action-btn ${liked ? 'active' : ''}`} onClick={handleLike}>
+            <Heart fill={liked ? '#ff2d55' : 'transparent'} color={liked ? '#ff2d55' : 'white'} />
+            <span>{reel.likes}</span>
+          </button>
+          <button className="action-btn" onClick={() => setShowComments(true)}>
+            <MessageCircle />
+            <span>{commentsCount}</span>
+          </button>
+          <button className="action-btn" onClick={() => setMuted(!muted)}>
+            {muted ? <VolumeX /> : <Volume2 />}
+          </button>
+          <button className="action-btn" onClick={handleShare}>
+            <Share2 />
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {showComments && (
@@ -283,22 +293,24 @@ const ReelItem: React.FC<{ reel: Reel; isActive: boolean }> = ({ reel, isActive 
       </AnimatePresence>
 
       {/* Info Overlay */}
-      <div className="reel-info-overlay">
-        <div className="creator-info">
-          <div className="avatar">
-            <img src={reel.creatorAvatar} alt={reel.creatorName} />
+      {!showComments && (
+        <div className="reel-info-overlay">
+          <div className="creator-info">
+            <div className="avatar">
+              <img src={reel.creatorAvatar} alt={reel.creatorName} />
+            </div>
+            <span className="username">@{reel.creatorName}</span>
+            <button className="follow-btn">Follow</button>
           </div>
-          <span className="username">@{reel.creatorName}</span>
-          <button className="follow-btn">Follow</button>
+          <p className="caption">{reel.caption}</p>
+          <div className="music-tag">
+            <Music size={14} />
+            <span>Original Audio - {reel.creatorName}</span>
+          </div>
         </div>
-        <p className="caption">{reel.caption}</p>
-        <div className="music-tag">
-          <Music size={14} />
-          <span>Original Audio - {reel.creatorName}</span>
-        </div>
-      </div>
+      )}
 
-      {!playing && (
+      {!playing && !showComments && (
         <div className="play-pause-indicator" onClick={togglePlay}>
           <Play size={64} fill="white" />
         </div>
@@ -434,7 +446,7 @@ const ReelCommentsPanel: React.FC<{ reelId: string; onClose: () => void }> = ({ 
           value={text} 
           onChange={e => setText(e.target.value)} 
         />
-        <button type="submit" disabled={!text.trim()}><Send size={16} /></button>
+        <button type="submit" disabled={!text.trim()}><Send size={16} color="white" /></button>
       </form>
     </div>
   );
