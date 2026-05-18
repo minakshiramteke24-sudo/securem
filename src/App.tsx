@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./context/AuthContext";
 import { useCrypto } from "./context/CryptoContext";
@@ -14,9 +14,9 @@ import Login from "./components/Auth/Login";
 import Signup from "./components/Auth/Signup";
 import Sidebar from "./components/Chat/Sidebar";
 import ChatWindow from "./components/Chat/ChatWindow";
-const CallOverlay = lazy(() => import("./components/Chat/CallOverlay"));
-const SettingsPage = lazy(() => import("./components/Chat/SettingsPage"));
-const ReelsView = lazy(() => import("./components/Reels/ReelsView"));
+import CallOverlay from "./components/Chat/CallOverlay";
+import SettingsPage from "./components/Chat/SettingsPage";
+import ReelsView from "./components/Reels/ReelsView";
 
 const LoadingSkeleton = () => (
   <motion.div 
