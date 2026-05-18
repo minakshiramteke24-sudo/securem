@@ -1,11 +1,22 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null",
-
     "users": {
       "$uid": {
-        ".read": "true",
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "user-chats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
       }
     },
@@ -13,6 +24,21 @@
     "stories": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+
+    "reels": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$reelId": {
+        "likes": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "comments": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      }
     },
 
     "transfers": {
