@@ -13,17 +13,19 @@ interface ReelsViewProps {
 }
 
 const ReelsView: React.FC<ReelsViewProps> = ({ onBack }) => {
+  const { user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!user) return;
     const unsub = subscribeToReels((data) => {
       setReels(data);
     });
     return () => unsub();
-  }, []);
+  }, [user]);
 
   const handleScroll = () => {
     if (!containerRef.current) return;
